@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/asma/RiderProjects/vaultapp/vaultapp.csproj": {}
+  },
+  "projects": {
+    "/home/asma/RiderProjects/vaultapp/vaultapp.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/asma/RiderProjects/vaultapp/vaultapp.csproj",
+        "projectName": "vaultapp",
+        "projectPath": "/home/asma/RiderProjects/vaultapp/vaultapp.csproj",
+        "packagesPath": "/home/asma/.nuget/packages/",
+        "outputPath": "/home/asma/RiderProjects/vaultapp/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/home/asma/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net6.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net6.0": {
+            "targetAlias": "net6.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net6.0": {
+          "targetAlias": "net6.0",
+          "dependencies": {
+            "Microsoft.AspNet.WebApi.Client": {
+              "target": "Package",
+              "version": "[5.2.9, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/lib/dotnet/sdk/6.0.113/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
