@@ -10,18 +10,11 @@ namespace BouncyCastleApp
         private static void Main()
         {
             // First load a Certificate, filename/path and certificate password
-            //var Cert = ReadCertFromFile("./example.crt", "1234");
             var cert = new X509Certificate2(Path.Combine(Directory.GetCurrentDirectory(), "example.crt"), "1234");
-            // var cert = new X509Certificate2(@".\example.crt"); //  Select a binary file
 
             var key = new X509SecurityKey(cert);
 
             var jwk = JsonWebKeyConverter.ConvertFromX509SecurityKey(key, true);
-
-            
-            
-            
-
             IList<JsonWebKey> jwksList = new List<JsonWebKey>
             {
                 jwk
@@ -37,11 +30,9 @@ namespace BouncyCastleApp
                 NullValueHandling = NullValueHandling.Ignore,
                 Formatting = Formatting.Indented
             });
-
-            // string jwksStr =SerializeToJson(jwksDict);
+            
             Console.WriteLine(jwksStr);
-
-            // JsonWebTokenHandler tokenHandler = new();
+            
         }
     }
 }
