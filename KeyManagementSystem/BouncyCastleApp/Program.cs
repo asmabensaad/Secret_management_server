@@ -10,7 +10,8 @@ namespace BouncyCastleApp
         private static void Main()
         {
             // First load a Certificate, filename/path and certificate password
-            var cert = new X509Certificate2(Path.Combine(Directory.GetCurrentDirectory(), "example.crt"), "1234");
+            var cert=new X509Certificate2(Path.GetFullPath("/home/asma/certp12/keyStore.p12"),"1234");
+            //var cert = new X509Certificate2(Path.Combine(Directory.GetCurrentDirectory(), "example.crt"), "1234");
 
             var key = new X509SecurityKey(cert);
 

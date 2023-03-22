@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vaultapp", "vaultapp\vaulta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BouncyCastleApp", "BouncyCastleApp\BouncyCastleApp.csproj", "{04649A3F-C1D1-4296-A179-4A2F5EFD6B77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JweEncryption", "JweEncryption\JweEncryption.csproj", "{4456BCCB-6CFE-4E2A-A157-23C28C977AF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,5 +27,9 @@ Global
 		{04649A3F-C1D1-4296-A179-4A2F5EFD6B77}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04649A3F-C1D1-4296-A179-4A2F5EFD6B77}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04649A3F-C1D1-4296-A179-4A2F5EFD6B77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4456BCCB-6CFE-4E2A-A157-23C28C977AF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4456BCCB-6CFE-4E2A-A157-23C28C977AF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4456BCCB-6CFE-4E2A-A157-23C28C977AF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4456BCCB-6CFE-4E2A-A157-23C28C977AF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
