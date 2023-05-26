@@ -4,8 +4,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Vaultapp
 {
-    
-    class Program
+    static class Program
     {
         // The since CS 7.1 TYPE can be Task instead of void
         static async Task Main(string[] args)

@@ -1,15 +1,9 @@
 
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace JweEncryption;
-
- using System;
 using Jose;
-using System.Collections.Generic;
-using System.Text;
 
- public class AssymetricJweEncryption
+public class AssymetricJweEncryption
 
  {
 	 public static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -28,8 +22,6 @@ using System.Text;
 	    var data = Jose.JWT.Decode(token,privateKey);
 		 Console.WriteLine(data);
 		 
-		 
-		
 	 }
 
  }
