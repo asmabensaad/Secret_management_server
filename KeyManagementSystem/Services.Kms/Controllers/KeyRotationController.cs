@@ -6,9 +6,12 @@ namespace Services.Kms.Controllers;
 
 [ApiController]
 [Route("/api/v2.1/kms/[controller]/[action]")]
-public class VaultController : ControllerBase
+public class KeyRotationController : ControllerBase
 {
     //  private ClientVault _clientVault = new ClientVault();
 
 
+    
+    
+    
 }
