@@ -27,12 +27,11 @@ var config = new ConfigurationOptions()
 IConnectionMultiplexer redis = ConnectionMultiplexer.Connect(config);
 
 builder.Services.AddScoped(s => redis.GetDatabase());
-builder.Services.AddMemoryCache();
+//builder.Services.AddMemoryCache();
 
 builder.Services.AddHangfire(configuration => configuration.UseSimpleAssemblyNameTypeSerializer().UseRecommendedSerializerSettings().
     UseRedisStorage("localhost:6379 , Password=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81"));
 builder.Services.AddHangfireServer();
-
 
 var app = builder.Build();
 //await app.WaitForShutdownAsync();

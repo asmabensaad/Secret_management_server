@@ -1,5 +1,6 @@
+using DataAccess.Models.Kms;
+
 using VaultSharp;
-using VaultSharp.V1.SecretsEngines.KeyValue.V2;
 
 namespace Core.Security;
 
@@ -54,7 +55,6 @@ public interface IKmsVaultClient
     /// </summary>
     /// <param name="vaultAddress"></param>
     /// <returns></returns>
-
     public IKmsVaultClient SetVaultAddress(string vaultAddress);
 
     /// <summary>
@@ -62,7 +62,7 @@ public interface IKmsVaultClient
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public Task<string> GetSecretAsyn(string key, string path);
+    public  Task<string> GetSecretAsyn(string key, string path);
 
 
     /// <summary>
@@ -87,12 +87,17 @@ public interface IKmsVaultClient
     /// <param name="key"></param>
     /// <param name="secretPath"></param>
     public Task<bool> DeleteSecretAsync(string key, string secretPath);
+
     /// <summary>
     /// GetClient
     /// </summary>
     /// <returns></returns>
-
     public IVaultClient GetClient();
-   
 
+    /// <summary>
+    /// RecurringJobsRotateKey
+    /// </summary>
+    /// <param name="model"></param>
+    /// <param name="path"></param>
+    public Task <bool> RecurringJobsRotateKey(string model ,string path);
 }

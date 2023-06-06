@@ -12,9 +12,10 @@ public class CacheController : Controller
 {
     private readonly IDatabase _database;
     private readonly IserviceManagement _serviceManagement;
-    public CacheController(IDatabase database)
+    public CacheController(IDatabase database, IserviceManagement servicemanagement)
     {
         _database = database;
+        _serviceManagement = servicemanagement;
     }
     
     //GET : api/Cache/5
@@ -39,13 +40,12 @@ public class CacheController : Controller
     
     
     [HttpGet]
-    public void RecurringJobsSendMail()
+   public void RecurringJobsSendMail()
     {
-        RecurringJob.AddOrUpdate(
+       RecurringJob.AddOrUpdate(
             "myrecurringjob",
             () => _serviceManagement.RecurringJobsSendMail("asma@gmail.com"),
             Cron.Minutely);
-        
     }
     
     }

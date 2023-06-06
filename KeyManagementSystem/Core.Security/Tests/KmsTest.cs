@@ -1,7 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using VaultSharp;
-using VaultSharp.V1.SecretsEngines.KeyValue.V2;
 
 namespace Core.Security.Tests;
 
@@ -45,10 +44,8 @@ public class KmsTest
                 .SetVaultAddress("http://127.0.0.1:8200");
 
             //Assert 
-            Assert.IsTrue(await _kmsVaultClient.CreatesecretAsync("first", new Dictionary<string, object>
-            {
-                {"test","x"}
-            },path));
+            Assert.IsTrue(await _kmsVaultClient.CreatesecretAsync("first",
+                new Dictionary<string, object> { { "test", "x" } }, path));
         }
         // ReSharper disable once EmptyGeneralCatchClause
         catch (Exception e)
@@ -90,11 +87,10 @@ public class KmsTest
 
         try
         {
-
             _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-           
+
             var result = await _kmsVaultClient.UpdateSecretAsync(key, secretvalue
-                ,path);
+                , path);
             Assert.IsTrue(result);
         }
         catch (Exception e)
@@ -112,7 +108,7 @@ public class KmsTest
         string secretpath = "/kms";
         string key = "aa";
         try
-        { 
+        {
             _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
 
             Assert.IsTrue(await _kmsVaultClient.DeleteSecretAsync(key, secretpath));
@@ -122,4 +118,18 @@ public class KmsTest
             Assert.Fail(e.Message);
         }
     }
+
+    /// <summary>
+    /// F_RecuringJobTest
+    /// </summary>
+    [TestMethod]
+    public async Task F_RecuringJobTest()
+    {
+        string path = "/kms";
+
+        _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
+        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKey(key: "first", path));
+    }
+
+    
 }

@@ -7,6 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Reference Include="Hangfire.Core">
+          <HintPath>..\..\..\.nuget\packages\hangfire.core\1.8.2\lib\netstandard2.0\Hangfire.Core.dll</HintPath>
+        </Reference>
         <Reference Include="Microsoft.AspNetCore.Mvc.Abstractions">
           <HintPath>..\..\..\..\..\usr\lib\dotnet\shared\Microsoft.AspNetCore.App\6.0.16\Microsoft.AspNetCore.Mvc.Abstractions.dll</HintPath>
         </Reference>
@@ -16,10 +19,15 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="jose-jwt" Version="4.1.0" />
       <PackageReference Include="MSTest" Version="3.0.2" />
       <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
       <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
       <PackageReference Include="VaultSharp" Version="1.13.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DataAccess.Models\DataAccess.Models.csproj" />
     </ItemGroup>
 
 </Project>

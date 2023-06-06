@@ -8,7 +8,6 @@ namespace DataAccess.Models.Kms;
 /// </summary>
 public class SecretModel
 {
-  
     /// <summary>
     /// Key 
     /// </summary>
@@ -21,9 +20,13 @@ public class SecretModel
     /// <summary>
     /// Dict
     /// </summary>
-    [JsonProperty("Dictionary")] 
-    [Required(ErrorMessage = "")] 
-    [MaxLength(255)] [MinLength(3)]
+    [JsonProperty("Dictionary")]
+    [Required(ErrorMessage = "")]
+    [MaxLength(255)]
+    [MinLength(3)]
     public Dictionary<string, object> Secretvalue { get; set; }
+ 
+
+
 
 }

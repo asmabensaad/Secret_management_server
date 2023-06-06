@@ -20,13 +20,12 @@ public class PersonController : Controller
     }
 
     [HttpGet]
-    public void RecurringJobsSendMail()
+   public void RecurringJobsSendMail()
     {
         RecurringJob.AddOrUpdate(
             "myrecurringjob",
             () => _serviceManagement.RecurringJobsSendMail("asma@gmail.com"),
             Cron.Minutely);
-
     }
 
     [HttpPost]

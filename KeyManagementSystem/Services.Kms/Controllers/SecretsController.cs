@@ -29,16 +29,17 @@ public class SecretsController : ControllerBase
     /// <summary>
     /// GetSecretAsync
     /// </summary>
-    /// <param name="secret"></param>
+    /// <param name="key"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<string> GetSecretAsync([FromBody] SecretModel secret, CancellationToken cancellationToken)
+    [Route("SecretModel{secret.key}")]
+    public async Task<string> GetSecretAsync([FromBody] string key, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
-        return await _client.GetSecretAsyn(secret.Key, path: "/kms");
+        return await _client.GetSecretAsyn(key, path: "/kms");
     }
 
     /// <summary>
@@ -48,6 +49,7 @@ public class SecretsController : ControllerBase
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete]
+    [Route("kms/secretModel/{secret}")]
     public async Task<bool> DeleteSecretAsync([FromBody] SecretModel secret, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");

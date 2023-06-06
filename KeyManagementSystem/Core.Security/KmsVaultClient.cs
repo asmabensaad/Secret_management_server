@@ -20,6 +20,8 @@ public class KmsVaultClient : IKmsVaultClient
     /// <inheritdoc cref="IKmsVaultClient.VaultAddress"/>
     public string VaultAddress { get; set; }
 
+    //  public SecretModel model;
+
     /// <inheritdoc cref="IKmsVaultClient.SetUserName"/>
     public IKmsVaultClient SetUserName(string username)
     {
@@ -97,6 +99,7 @@ public class KmsVaultClient : IKmsVaultClient
         return vaultClient;
     }
 
+
     /// <summary>
     /// GetSecret
     /// </summary>
@@ -130,6 +133,7 @@ public class KmsVaultClient : IKmsVaultClient
         try
         {
             var client = GetClient();
+
             await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, value, null, path);
             return true;
         }
@@ -181,5 +185,42 @@ public class KmsVaultClient : IKmsVaultClient
         {
             throw new CoreSecurityException("path  kms/ not found in vault");
         }
+    }
+
+    /// <summary>
+    /// RecurringJobsRotateKey
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="path"></param>
+    public async Task<bool> RecurringJobsRotateKey(string key, string path)
+    {
+        DateTime localDate = DateTime.Now;
+        var client = GetClient();
+
+        try
+        {
+            Secret<FullSecretMetadata> secretmetadata =
+                await client.V1.Secrets.KeyValue.V2.ReadSecretMetadataAsync(key, path);
+            string dataCreatedTime = secretmetadata.Data.CreatedTime;
+            if (DateTime.TryParse(dataCreatedTime, out DateTime date))
+            {
+                TimeSpan ts = localDate - date;
+                if (ts.Days > 2)
+                {
+                    var secretValue = new Dictionary<string, object> { { "feel", "happy" } };
+                    await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
+                    await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
+                }
+
+
+                return true;
+            }
+        }
+        catch (Exception e)
+        {
+            Console.Write(e.Message);
+        }
+
+        return false;
     }
 }
