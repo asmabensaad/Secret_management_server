@@ -1,12 +1,15 @@
 using Core.Security;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace Services.Kms;
 
 public class Startup
 {
+    readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
     readonly ConfigurationOptions _config = new()
     {
         KeepAlive = 0,
@@ -21,9 +24,10 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+
         services.AddControllers();
         services.AddScoped<IKmsVaultClient, KmsVaultClient>();
-       // services.AddHttpClient<IKmsVaultClient, KmsVaultClient>();
+        // services.AddHttpClient<IKmsVaultClient, KmsVaultClient>();
         services.AddHangfire(configuration => configuration.UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UseRedisStorage(ConnectionMultiplexer.Connect(_config)));
@@ -31,7 +35,13 @@ public class Startup
         services.AddHttpContextAccessor();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+        services.AddCors(options => options.AddPolicy(name:MyAllowSpecificOrigins ,
+            policy =>
+        {
+            policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
+        }));
     }
+
 
     public void Configure(WebApplication app, IWebHostEnvironment env)
     {
@@ -43,10 +53,12 @@ public class Startup
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
+        
 
-        app.UseAuthorization();
+        app.UseHttpsRedirection();
         app.UseRouting();
+        app.UseCors(MyAllowSpecificOrigins);
+        app.UseAuthorization();
         app.UseHangfireDashboard("/jobs");
         app.MapHangfireDashboard();
 

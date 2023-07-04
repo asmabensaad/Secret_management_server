@@ -14,12 +14,12 @@ public class KeyRotationController : ControllerBase
     /// <summary>
     /// KeyRotateRecuringJob
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="secret"></param>
     /// <returns></returns>
     [HttpPut]
-    public IActionResult KeyRotateRecuringJob([FromBody] string key)
+    public IActionResult KeyRotateRecuringJob([FromBody] string secret)
     {
-        var jobId = BackgroundJob.Enqueue(() => ProcessKeyAsync(key));
+        var jobId = BackgroundJob.Enqueue(() => ProcessKeyAsync(secret));
 
         return Accepted(jobId);
     }
@@ -27,14 +27,14 @@ public class KeyRotationController : ControllerBase
     /// <summary>
     /// ProcessKeyAsync
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="secret"></param>
     /// <returns></returns>
     [HttpPut]
-    public Task<bool> ProcessKeyAsync(string key)
+    public Task<bool> ProcessKeyAsync(string secret)
     {
         return _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200")
             .SetUserName(username: "admin")
             .SetPassword(password: "admin")
-            .RecurringJobsRotateKey(key, "/kms");
+            .RecurringJobsRotateKey(secret, "/kms");
     }
 }

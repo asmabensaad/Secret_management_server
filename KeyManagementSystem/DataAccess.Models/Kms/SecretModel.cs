@@ -11,19 +11,19 @@ public class SecretModel
     /// <summary>
     /// Key 
     /// </summary>
-    [JsonProperty("key")]
+    [JsonProperty("secret")]
     [Required]
     [MaxLength(255)]
-    [MinLength(3)]
-    public string Key { get; set; }
+    [MinLength(1)]
+    public string Secret { get; set; }
 
     /// <summary>
-    /// Dict
+    /// Secretvalue
     /// </summary>
-    [JsonProperty("Dictionary")]
+    [JsonProperty("Secretvalue")]
     [Required(ErrorMessage = "")]
     [MaxLength(255)]
-    [MinLength(3)]
+    [MinLength(1)]
     public Dictionary<string, object> Secretvalue { get; set; }
  
 

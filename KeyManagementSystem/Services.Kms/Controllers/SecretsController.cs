@@ -1,5 +1,6 @@
 using Core.Security;
 using DataAccess.Models.Kms;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Services.Kms.Controllers;
@@ -13,51 +14,51 @@ public class SecretsController : ControllerBase
     /// <summary>
     /// CreateAsyncSecret
     /// </summary>
-    /// <param name="secret"></param>
+    /// <param name="secret1"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<bool> CreateAsyncSecret([FromBody] SecretModel secret, CancellationToken cancellationToken)
+    public async Task<bool> CreateAsyncSecret([FromBody] SecretModel secret1, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
 
-        return await _client.CreatesecretAsync(secret.Key, secret.Secretvalue, path: "/kms");
+        return await _client.CreatesecretAsync(secret1.Secret, secret1.Secretvalue, path: "/kms");
     }
 
     /// <summary>
     /// GetSecretAsync
     /// </summary>
-    /// <param name="key"></param>
+    /// <param name="secret"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
-    [Route("SecretModel{secret.key}")]
-    public async Task<string> GetSecretAsync([FromBody] string key, CancellationToken cancellationToken)
+    [Route("SecretModel/{secret.key}")]
+    public async Task<string> GetSecretAsynch([FromBody] string secret, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
-        return await _client.GetSecretAsyn(key, path: "/kms");
+        return await _client.GetSecretAsyn(secret, path: "/kms");
     }
 
     /// <summary>
     /// DeleteSecretAsync
     /// </summary>
-    /// <param name="secret"></param>
+    /// <param name="model"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete]
     [Route("kms/secretModel/{secret}")]
-    public async Task<bool> DeleteSecretAsync([FromBody] SecretModel secret, CancellationToken cancellationToken)
+    public async Task<bool> DeleteSecretAsync([FromBody] SecretModel model, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
         try
         {
-            return await _client.DeleteSecretAsync(secret.Key, secretPath: "/kms");
+            return await _client.DeleteSecretAsync(model.Secret, secretPath: "/kms");
         }
         catch (Exception e)
         {
@@ -70,19 +71,19 @@ public class SecretsController : ControllerBase
     /// <summary>
     /// UpdateSecretASync
     /// </summary>
-    /// <param name="secret"></param>
+    /// <param name="model"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPut]
-    public async Task<bool> UpdateSecretASync([FromBody] SecretModel secret, CancellationToken cancellationToken)
+    public async Task<bool> UpdateSecretASync([FromBody] SecretModel model, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
         var secretValue = new Dictionary<string, object> { { "feel", "good" } };
-        if (secret.Key != null)
+        if (model.Secret!= null)
         {
-            return await _client.UpdateSecretAsync(secret.Key, secretValue, path: "/kms");
+            return await _client.UpdateSecretAsync(model.Secret, secretValue, path: "/kms");
         }
 
         return false;
