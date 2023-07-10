@@ -5,10 +5,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.Filters;
 
-using System.Security.Claims;
-using System.Security.Cryptography;
-using Auth.Models;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -37,7 +33,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true,
         IssuerSigningKey =
             new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value)),
+                Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value ?? throw new InvalidOperationException())),
         ValidateIssuer = false,
         ValidateAudience = false
 

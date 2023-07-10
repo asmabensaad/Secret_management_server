@@ -23,12 +23,12 @@ public class AuthController : ControllerBase
         _userService = userService;
     }
 
-    [HttpGet, Authorize]
+    [HttpGet, Authorize  ]
     public ActionResult<string> GetMe()
     {
         var userName = _userService.GetMyName();
-        return userName;
-        // return Ok(userName);
+       
+         return Ok(userName);
     }
 /// <summary>
 /// Register
@@ -72,22 +72,22 @@ public class AuthController : ControllerBase
 /// </summary>
 /// <returns></returns>
     [HttpPost("refresh-token")]
-    public Task<ActionResult<string>> RefreshToken()
+    public async Task<ActionResult<string>> RefreshToken()
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (!user.RefreshToken.Equals(refreshToken))
         {
-            return Task.FromResult<ActionResult<string>>(Unauthorized("Invalid Refresh Token"));
+            return Unauthorized("Invalid Refresh Token");
         }
         else if (user.TokenExpires < DateTime.Now)
         {
-            return Task.FromResult<ActionResult<string>>(Unauthorized("Token expired."));
+            return Unauthorized("Token expired.");
         }
 
         string token = CreateToken(user);
         var newRefreshToken = GenerateRefreshToken();
         SetRefreshToken(newRefreshToken);
-        return Task.FromResult<ActionResult<string>>(Ok(token));
+        return Ok(token);
     }
 /// <summary>
 /// GenerateRefreshToken
@@ -111,7 +111,7 @@ public class AuthController : ControllerBase
     {
         var cookieOptions = new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false,
             Expires = newRefreshToken.Expires
         };
         Response.Cookies.Append("refreshToken", newRefreshToken.Token, cookieOptions);
@@ -128,8 +128,8 @@ public class AuthController : ControllerBase
     {
         List<Claim> claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim (ClaimTypes.Name, user.Username),
+            new Claim( ClaimTypes.Role, "noob")
         };
         var key = new SymmetricSecurityKey(
             System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
@@ -164,15 +164,15 @@ public class AuthController : ControllerBase
 /// VerifyPasswordHash
 /// </summary>
 /// <param name="password"></param>
-/// <param name="passworHash"></param>
+/// <param name="passwordHash"></param>
 /// <param name="passwordSalt"></param>
 /// <returns></returns>
-    private bool VerifyPasswordHash(string password, byte[] passworHash, byte[] passwordSalt)
+    private bool VerifyPasswordHash(string password, byte[] passwordHash, byte[] passwordSalt)
     {
         using (var hmac = new HMACSHA512(passwordSalt))
         {
             var computedHash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password));
-            return computedHash.SequenceEqual(passworHash);
+            return computedHash.SequenceEqual(passwordHash);
         }
     }
 }
