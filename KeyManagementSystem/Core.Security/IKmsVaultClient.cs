@@ -1,5 +1,3 @@
-using DataAccess.Models.Kms;
-
 using VaultSharp;
 
 namespace Core.Security;
@@ -62,7 +60,7 @@ public interface IKmsVaultClient
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public  Task<string> GetSecretAsyn(string key, string path);
+    public Task<string> GetSecretAsync(string key, string path);
 
 
     /// <summary>
@@ -99,5 +97,5 @@ public interface IKmsVaultClient
     /// </summary>
     /// <param name="model"></param>
     /// <param name="path"></param>
-    public Task <bool> RecurringJobsRotateKey(string model ,string path);
+    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path);
 }

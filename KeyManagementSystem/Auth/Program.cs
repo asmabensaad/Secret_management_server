@@ -1,11 +1,15 @@
 using System.Text;
-using Auth2;
-using Auth2.Repository;
+using DataAccess.Database;
+using DataAccess.Database.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+//TODO: Follow naming convention
+//TODO: Remove commented code
+//TODO: Fix spelling
+//TODO: USER STARTUP CLASS
 var builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 // Add services to the container.

@@ -1,8 +1,7 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+using Core.Security;
 using VaultSharp;
 
-namespace Core.Security.Tests;
+namespace UnitTests;
 
 [TestClass]
 public class KmsTest
@@ -67,7 +66,7 @@ public class KmsTest
         {
             _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
 
-            Assert.IsNotNull(await _kmsVaultClient.GetSecretAsyn(key, path));
+            Assert.IsNotNull(await _kmsVaultClient.GetSecretAsync(key, path));
         }
         catch (Exception e)
         {
@@ -128,7 +127,7 @@ public class KmsTest
         string path = "/kms";
 
         _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKey(key: "first", path));
+        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path));
     }
 
     

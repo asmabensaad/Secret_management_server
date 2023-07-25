@@ -7,14 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Core.Security\Core.Security.csproj" />
+      <ProjectReference Include="..\DataAccess.Database\DataAccess.Database.csproj" />
       <ProjectReference Include="..\DataAccess.Models\DataAccess.Models.csproj" />
       <ProjectReference Include="..\DataAccess.Security\DataAccess.Security.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="MSTest" Version="3.0.2" />
-      <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
-      <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
     </ItemGroup>
 
 </Project>

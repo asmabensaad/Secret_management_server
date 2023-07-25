@@ -1,22 +1,18 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
+using Auth2;
 
-namespace Auth2.Repository;
+namespace DataAccess.Database.Repository;
 
+//TODO: Follow naming convention
+//TODO: Remove commented code
+//TODO: Fix spelling
 public class AccountRepository : IAccountRepository
-{ private readonly IConfiguration _configuration;
-
+{
     private readonly ApplicationDbContext _applicationDbContext;
-    public AccountRepository(IConfiguration configuration , ApplicationDbContext applicationDbContext)
+
+    public AccountRepository(ApplicationDbContext applicationDbContext)
     {
-        _configuration = configuration;
         _applicationDbContext = applicationDbContext;
     }
-  
 
 
     public string getMyName()

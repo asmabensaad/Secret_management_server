@@ -8,32 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.19" />
-        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.19" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0-preview.5.23280.1" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0-preview.5.23280.1">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     </ItemGroup>
+    
 
     <ItemGroup>
-      <Reference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore">
-        <HintPath>..\..\..\.nuget\packages\microsoft.aspnetcore.identity.entityframeworkcore\6.0.19\lib\net6.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll</HintPath>
-      </Reference>
-      <Reference Include="Microsoft.EntityFrameworkCore">
-        <HintPath>..\..\..\.nuget\packages\microsoft.entityframeworkcore\8.0.0-preview.5.23280.1\lib\net6.0\Microsoft.EntityFrameworkCore.dll</HintPath>
-      </Reference>
-      <Reference Include="Microsoft.IdentityModel.JsonWebTokens">
-        <HintPath>..\..\..\.nuget\packages\microsoft.identitymodel.jsonwebtokens\6.27.0\lib\net6.0\Microsoft.IdentityModel.JsonWebTokens.dll</HintPath>
-      </Reference>
-      <Reference Include="Microsoft.IdentityModel.Tokens">
-        <HintPath>..\..\..\.nuget\packages\microsoft.identitymodel.tokens\6.27.0\lib\net6.0\Microsoft.IdentityModel.Tokens.dll</HintPath>
-      </Reference>
-      <Reference Include="System.IdentityModel.Tokens.Jwt">
-        <HintPath>..\..\..\.nuget\packages\system.identitymodel.tokens.jwt\6.27.0\lib\net6.0\System.IdentityModel.Tokens.Jwt.dll</HintPath>
-      </Reference>
+      <ProjectReference Include="..\Core.IoC\Core.IoC.csproj" />
     </ItemGroup>
 
 </Project>

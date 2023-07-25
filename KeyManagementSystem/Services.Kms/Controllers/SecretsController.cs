@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Services.Kms.Controllers;
 
+//TODO: Follow naming convention
+//TODO: Remove commented code
+//TODO: Fix spelling
 [ApiController]
 [Route("/api/v1.0/kms/[controller]/[action]")]
 public class SecretsController : ControllerBase
@@ -24,7 +27,7 @@ public class SecretsController : ControllerBase
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
 
-        return await _client.CreatesecretAsync(secret1.Secret, secret1.Secretvalue, path: "/kms");
+        return await _client.CreatesecretAsync(secret1.Secret, secret1.SecretValue, path: "/kms");
     }
 
     /// <summary>
@@ -40,7 +43,7 @@ public class SecretsController : ControllerBase
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");
         _client.SetPassword(password: "admin");
-        return await _client.GetSecretAsyn(secret, path: "/kms");
+        return await _client.GetSecretAsync(secret, path: "/kms");
     }
 
     /// <summary>

@@ -7,6 +7,9 @@ using StackExchange.Redis;
 
 namespace Services.Kms;
 
+//TODO: Follow naming convention
+//TODO: Remove commented code
+//TODO: Fix spelling
 public class Startup
 {
     readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";

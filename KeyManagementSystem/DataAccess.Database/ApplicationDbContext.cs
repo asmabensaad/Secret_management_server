@@ -1,7 +1,8 @@
+using Auth2;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Auth2;
+namespace DataAccess.Database;
 
 public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 {

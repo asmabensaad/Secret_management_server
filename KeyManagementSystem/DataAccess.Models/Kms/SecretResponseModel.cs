@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace DataAccess.Models.Kms;
 
 /// <summary>
-///  SecretResponseModel
+///  Secret response model
 /// </summary>
 public class SecretResponseModel : SecretModel
 {
@@ -12,5 +12,4 @@ public class SecretResponseModel : SecretModel
     /// </summary>
     [JsonProperty]
     public string Version { get; set; }
-
 }

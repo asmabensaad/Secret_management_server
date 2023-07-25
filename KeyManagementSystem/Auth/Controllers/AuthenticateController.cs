@@ -3,8 +3,8 @@ using System.Security;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Auth2.Repository;
-
+using DataAccess.Database;
+using DataAccess.Database.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +13,9 @@ using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegiste
 
 namespace Auth2.Controllers;
 
+//TODO: Follow naming convention
+//TODO: Remove commented code
+//TODO: Fix spelling
 [Route("api/[controller]")]
 [ApiController]
 public class AuthenticateController : ControllerBase

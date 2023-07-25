@@ -105,19 +105,19 @@ public class KmsVaultClient : IKmsVaultClient
     /// </summary>
     /// <returns></returns>
     /// <exception cref="CoreSecurityException"></exception>
-    public async Task<string> GetSecretAsyn(string key, string path)
+    public async Task<string> GetSecretAsync(string key, string path)
     {
         var client = GetClient();
+
         try
         {
             Secret<SecretData> kv2Secret = await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: path);
             string s = kv2Secret.Data.ToString();
             return s;
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.WriteLine(e.Message);
-            return e.Message;
+            return null;
         }
     }
 
@@ -137,9 +137,8 @@ public class KmsVaultClient : IKmsVaultClient
             await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, value, null, path);
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.WriteLine(e.Message);
             return false;
         }
     }
@@ -159,10 +158,9 @@ public class KmsVaultClient : IKmsVaultClient
             await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
             return true;
         }
-        catch (Exception e)
+        catch (Exception)
 
         {
-            Console.WriteLine(e.Message);
             return false;
         }
     }
@@ -192,7 +190,7 @@ public class KmsVaultClient : IKmsVaultClient
     /// </summary>
     /// <param name="key"></param>
     /// <param name="path"></param>
-    public async Task<bool> RecurringJobsRotateKey(string key, string path)
+    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path)
     {
         DateTime localDate = DateTime.Now;
         var client = GetClient();
@@ -201,24 +199,29 @@ public class KmsVaultClient : IKmsVaultClient
         {
             Secret<FullSecretMetadata> secretmetadata =
                 await client.V1.Secrets.KeyValue.V2.ReadSecretMetadataAsync(key, path);
+
             string dataCreatedTime = secretmetadata.Data.CreatedTime;
+
             if (DateTime.TryParse(dataCreatedTime, out DateTime date))
             {
                 TimeSpan ts = localDate - date;
-                if (ts.Days > 2)
+
+                if (ts.Days <= 2)
                 {
-                    var secretValue = new Dictionary<string, object> { { "feel", "happy" } };
-                    await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
-                    await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
+                    return true;
                 }
+
+                var secretValue = new Dictionary<string, object> {{"feel", "happy"}}; //TODO: Remove static data
+                await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
+                await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
 
 
                 return true;
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            Console.Write(e.Message);
+            return false;
         }
 
         return false;

@@ -20,11 +20,11 @@ public class SecretModel
     /// <summary>
     /// Secretvalue
     /// </summary>
-    [JsonProperty("Secretvalue")]
+    [JsonProperty("secretValue")]
     [Required(ErrorMessage = "")]
     [MaxLength(255)]
     [MinLength(1)]
-    public Dictionary<string, object> Secretvalue { get; set; }
+    public Dictionary<string, object> SecretValue { get; set; }
  
 
 
