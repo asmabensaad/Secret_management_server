@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.IoC", "Core.IoC\Core.I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAccess.Models", "DataAccess.Models\DataAccess.Models.csproj", "{5D4B6A2E-0778-462C-9556-FCAF6FF6AE7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth", "Auth\Auth.csproj", "{19300C27-9869-46F0-9AAD-B77528703ECE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.Auth", "Services.Auth\Services.Auth.csproj", "{19300C27-9869-46F0-9AAD-B77528703ECE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{BED4587B-A7FA-4FE7-9BCD-D45119E13046}"
 EndProject

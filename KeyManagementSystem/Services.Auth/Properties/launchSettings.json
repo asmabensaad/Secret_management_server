@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "Auth2": {
+    "Services.Auth": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
