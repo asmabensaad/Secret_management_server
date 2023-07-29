@@ -1,17 +1,19 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security;
+using System.Security.Authentication;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Auth2;
 using DataAccess.Database;
-using DataAccess.Database.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
-namespace Auth2.Controllers;
+namespace Services.Auth.Controllers;
 
 //TODO: Follow naming convention
 //TODO: Remove commented code
@@ -20,27 +22,26 @@ namespace Auth2.Controllers;
 [ApiController]
 public class AuthenticateController : ControllerBase
 {
-    private readonly IAccountRepository _iaccountRepository;
 
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-
-    private readonly AccountRepository _accountRepository;
+    private readonly IHttpContextAccessor httpC;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
     public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration, IAccountRepository accountRepository)
+        IConfiguration configuration, IHttpContextAccessor _httpC,SignInManager<ApplicationUser> signInManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-    
-        _iaccountRepository = accountRepository;
-      
+        httpC = _httpC;
+        _signInManager = signInManager;
+
     }
 
     /// <summary>
-    /// 
+    /// Authentication
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
@@ -64,7 +65,7 @@ public class AuthenticateController : ControllerBase
                 authClaims.Add(new Claim(ClaimTypes.Role, userRole));
             }
 
-            var token =CreateToken(authClaims);
+            var token = CreateToken(authClaims);
             var refreshToken = GenerateRefreshToken();
             _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
             user.RfereshToken = refreshToken;
@@ -83,7 +84,7 @@ public class AuthenticateController : ControllerBase
     }
 
     /// <summary>
-    /// /
+    /// registration
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
@@ -101,7 +102,9 @@ public class AuthenticateController : ControllerBase
         {
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
-            UserName = model.Username
+            UserName = model.Username,
+            PhoneNumber = model.contactNumber,
+
         };
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
@@ -122,30 +125,40 @@ public class AuthenticateController : ControllerBase
             await _userManager.AddToRoleAsync(user, UserRoles.User);
         }
 
-        return Ok(new Response { Status = "Succes", Message = "User created successfuly!" });
+        return Ok(new Response { Status = "Success", Message = "User created successfully!" });
 
 
     }
-    
+
+    /// <summary>
+    /// Generate the refresh Token
+    /// </summary>
+    /// <returns></returns>
+
     private string GenerateRefreshToken()
     {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
-        
+
     }
 
-    
-    
-    
+    /// <summary>
+    /// create Token 
+    /// </summary>
+    /// <param name="authClaims"></param>
+    /// <returns></returns>
+
+
     private JwtSecurityToken CreateToken(List<Claim> authClaims)
     {
         var authSiginKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-        _=int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
+        _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
         var token = new JwtSecurityToken(
             issuer: _configuration["JWT:ValidIssuer"],
             audience: _configuration["JWT:ValidAudience"],
+
             expires: DateTime.Now.AddMinutes(tokenValidityInMinutes),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSiginKey, SecurityAlgorithms.HmacSha256)
@@ -154,9 +167,15 @@ public class AuthenticateController : ControllerBase
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="tokenModel"></param>
+    /// <returns></returns>
+
     [HttpPost]
     [Route("refresh-token")]
-    public async Task<IActionResult> RefreshToken(TokenModel tokenModel)
+    public async Task<IActionResult> RefreshToken(TokenModel? tokenModel)
     {
         if (tokenModel is null)
         {
@@ -173,12 +192,8 @@ public class AuthenticateController : ControllerBase
             return BadRequest("Invalid access token or refresh token");
 
         }
-
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
         string username = principal.Identity.Name;
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+
         var user = await _userManager.FindByNameAsync(username);
         if (user == null || user.RfereshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
         {
@@ -197,6 +212,12 @@ public class AuthenticateController : ControllerBase
 
     }
 
+    /// <summary>
+    /// revoke a token from a specified user
+    /// </summary>
+    /// <param name="email"></param>
+    /// <returns></returns>
+
     [Authorize]
     [HttpPost]
     [Route("revoke/{username}")]
@@ -211,6 +232,10 @@ public class AuthenticateController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// revoke all token from all user
+    /// </summary>
+    /// <returns></returns>
     [Authorize]
     [HttpPost]
     [Route("revoke-all")]
@@ -226,8 +251,8 @@ public class AuthenticateController : ControllerBase
 
         return NoContent();
     }
-    
-    
+
+
     private ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
     {
         var tokenValidationParameters = new TokenValidationParameters
@@ -236,7 +261,11 @@ public class AuthenticateController : ControllerBase
             ValidateIssuer = false,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
-            ValidateLifetime = false
+            ValidateLifetime = false,
+
+
+
+
 
         };
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -248,6 +277,88 @@ public class AuthenticateController : ControllerBase
         return principal;
     }
 
+    [HttpGet]
+    [Route("GetAllUsers")]
+    public async Task<IActionResult> GetUsers()
+    {
+        var allUsers = await _userManager.Users.ToListAsync();
+        var userInformationList = allUsers.Select(u => new RegisterModel()
+        {
+
+            Username = u.UserName,
+            Email = u.Email,
+            contactNumber = u.PhoneNumber
 
 
+        }).ToList();
+        return Ok(userInformationList);
+    }
+
+    [Authorize]
+    [HttpGet]
+    [Route("getCurrentUser")]
+    public async Task<IActionResult> GetUser()
+    {
+
+
+        if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                return Ok(new
+                {
+                    userId = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email
+                });
+            }
+
+            
+            // var user = await _userManager.GetUserAsync(HttpContext.User);
+            // if (user == null)
+            // {
+            //     return Ok(new { Message = "User data not available" });
+            // }
+            //
+            // return Ok(new { UserName = user.UserName });
+            //
+            //
+        }
+        return BadRequest("user not authenticated");
+
+    }
+    [Authorize]
+    [HttpGet]
+  
+        int GetLoggedUserId()
+        {
+            if (!User.Identity.IsAuthenticated)
+                throw new AuthenticationException();
+
+            string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+
+            return int.Parse(userId);
+        }
+        
+    
+
+   [Authorize]
+    [HttpPost]
+    [Route("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user != null)
+        {
+            user.RfereshToken = null;
+            await _userManager.UpdateAsync(user);
+        }
+
+        await _signInManager.SignOutAsync();
+        return Ok(new { message = "logout successful" });
+    }
+    
 }
+
