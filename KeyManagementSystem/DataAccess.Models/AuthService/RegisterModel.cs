@@ -14,5 +14,7 @@ public class RegisterModel
 
     [Required(ErrorMessage = "Password is required")]
     public string? Password { get; set; }
+   
+    public string? contactNumber { get; set; }
 
 }

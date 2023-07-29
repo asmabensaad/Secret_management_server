@@ -25,7 +25,7 @@ public class AccountRepository : IAccountRepository
         throw new NotImplementedException();
     }
 
-    public RegisterModel Getuser(int id)
+    public LoginModel Getuser(string email)
     {
         throw new NotImplementedException();
     }
@@ -34,4 +34,6 @@ public class AccountRepository : IAccountRepository
     {
         throw new NotImplementedException();
     }
+    
+    
 }

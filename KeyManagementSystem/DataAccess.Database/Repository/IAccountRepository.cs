@@ -13,6 +13,6 @@ public interface IAccountRepository
 
 
     List<RegisterModel> GetUsers();
-    RegisterModel Getuser(int id);
+    LoginModel Getuser(string email);
     List<RegisterModel> updateuser(int id, RegisterModel request);
 }

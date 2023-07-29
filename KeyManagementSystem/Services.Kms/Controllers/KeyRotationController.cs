@@ -11,7 +11,7 @@ namespace Services.Kms.Controllers;
 [Route("/api/v1.0/kms/[controller]/[action]")]
 public class KeyRotationController : ControllerBase
 {
-    private KmsVaultClient _client = new KmsVaultClient();
+    private readonly KmsVaultClient _client = new KmsVaultClient();
 
 
     /// <summary>

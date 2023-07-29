@@ -1,6 +1,5 @@
 using Core.Security;
 using DataAccess.Models.Kms;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Services.Kms.Controllers;
@@ -38,7 +37,7 @@ public class SecretsController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("SecretModel/{secret.key}")]
-    public async Task<string> GetSecretAsynch([FromBody] string secret, CancellationToken cancellationToken)
+    public async Task<string> GetSecretAsync([FromBody] string secret, CancellationToken cancellationToken)
     {
         _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
         _client.SetUserName(username: "admin");

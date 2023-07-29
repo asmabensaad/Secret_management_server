@@ -4,18 +4,16 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-       
-        var builder = WebApplication.CreateBuilder(args);
-        var startup = new Startup();
-        startup.ConfigureServices(builder.Services);
-
+        var builder = CreateHostBuilder(args);
         var app = builder.Build();
-        startup.Configure(app, builder.Environment);
-       
-        
+        app.Run();
     }
 
-   private static IHostBuilder CreateHostBuilder(string[] args) =>
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder => { webBuilder.UseStartup<Startup>(); });
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+                webBuilder.UseUrls($"http://0.0.0.0:2000");
+            });
 }

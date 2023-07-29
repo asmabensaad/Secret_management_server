@@ -1,4 +1,4 @@
-using Core.Security;
+using System.Text;
 using Core.Security.Cryptographie;
 
 namespace UnitTests;
@@ -6,29 +6,23 @@ namespace UnitTests;
 [TestClass]
 public class CryptoTest
 {
-    readonly KmsVaultClient _kmsVaultClient = new();
+    private readonly Crypto _crypto = new Crypto();
+   
 
-    public enum algorithm
-    {
-        ECDH,
-        HS256,
-        AES
-    }
 
     [TestMethod]
-    public void A_EncryptionTest()
+    public void TestEncryptionAndDecryption()
     {
-
-        _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-        Assert.IsNotNull(Crypto.EncryptData(Crypto.Algorithm.Ecdh));
-
-    }
-
-
-[TestMethod]
-    public void B_DecryptionTest()
-    {
-        Assert.IsNotNull(Crypto.Decryptdata(Crypto.Algorithm.Ecdh));
+        //Arrange
+        var dataEncrypt = Encoding.UTF8.GetBytes("sensitive data to encrypt");
+        var encryptionKey = new byte[32];
         
+        //Action
+        var encryptedData = _crypto.Encrypt(dataEncrypt, Crypto.Algorithm.Hs512, encryptionKey);
+        byte[] decryptedData = _crypto.Decrypt(encryptedData, Crypto.Algorithm.Hs512, encryptionKey);
+        
+    CollectionAssert.AreEqual(dataEncrypt,decryptedData,"Decrypted data should match the original data");
+
+
     }
 }

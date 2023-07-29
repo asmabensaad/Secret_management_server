@@ -1,8 +1,6 @@
 using Core.Security;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
 namespace Services.Kms;
@@ -12,8 +10,9 @@ namespace Services.Kms;
 //TODO: Fix spelling
 public class Startup
 {
-    readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-    readonly ConfigurationOptions _config = new()
+    private const string CorsPolicy = "CORS";
+
+    private readonly ConfigurationOptions _config = new()
     {
         KeepAlive = 0,
         AllowAdmin = true,
@@ -27,10 +26,8 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-
         services.AddControllers();
         services.AddScoped<IKmsVaultClient, KmsVaultClient>();
-        // services.AddHttpClient<IKmsVaultClient, KmsVaultClient>();
         services.AddHangfire(configuration => configuration.UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UseRedisStorage(ConnectionMultiplexer.Connect(_config)));
@@ -38,35 +35,26 @@ public class Startup
         services.AddHttpContextAccessor();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
-        services.AddCors(options => options.AddPolicy(name:MyAllowSpecificOrigins ,
-            policy =>
-        {
-            policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin();
-        }));
+
+        services.AddCors(options => options.AddPolicy(name: CorsPolicy,
+            policy => { policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin(); }));
     }
 
 
-    public void Configure(WebApplication app, IWebHostEnvironment env)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        
-        if (app.Environment.IsDevelopment())
+        if (env.IsDevelopment())
         {
-       
             app.UseSwagger();
             app.UseSwaggerUI();
         }
 
-        
-
         app.UseHttpsRedirection();
         app.UseRouting();
-        app.UseCors(MyAllowSpecificOrigins);
+        app.UseCors(CorsPolicy);
         app.UseAuthorization();
         app.UseHangfireDashboard("/jobs");
-        app.MapHangfireDashboard();
 
-        app.MapControllers();
-        app.Run();
-        
+        app.UseEndpoints(builder => builder.MapControllers());
     }
 }

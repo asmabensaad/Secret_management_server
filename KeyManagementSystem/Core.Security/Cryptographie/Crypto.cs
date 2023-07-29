@@ -1,5 +1,8 @@
+
+using System.Security.Cryptography;
 using System.Text;
 using Jose;
+
 
 namespace Core.Security.Cryptographie;
 
@@ -7,126 +10,119 @@ namespace Core.Security.Cryptographie;
 //TODO: Remove any console log
 //TODO: Follow naming convention
 //TODO: Remove commented code
-public class Crypto
+public class Crypto : ICrypto
 {
-    private static readonly KmsVaultClient Client = new();
+    
 
     public enum Algorithm
     {
-        Ecdh,
-        HS256,
-        AES
+        //HMAC signatures with HS256, HS384 and HS512.
+        Hs256 = 0,
+        Hs384 = 1,
+        Hs512 = 2
     }
 
-    /// <summary>
-    /// EncryptData
-    /// </summary>
-    /// <returns></returns>
-    public static async Task<string> EncryptData(Algorithm alg)
+/// <summary>
+/// Generate KeyByte
+/// </summary>
+/// <returns></returns>
+
+    [Obsolete("Obsolete")]
+    private static byte[] GenerateEncryptionKey()
     {
-        // TODO: Remove configuration
-        Client.SetVaultAddress("http://127.0.0.1:8200").SetUserName("admin").SetPassword("admin");
+        const int keySizeInByte = 32;
+        var keyBytes = new byte[keySizeInByte];
+        using var rng = new RNGCryptoServiceProvider();
+        rng.GetBytes(keyBytes);
+        Console.WriteLine(keyBytes);
+        return keyBytes;
 
-        var payload = await Client.GetSecretAsync(key: "first", path: "/kms");
 
-        var i = (int) alg;
+    }
 
+    [Obsolete("Obsolete")] internal byte[] KeyBytes = GenerateEncryptionKey();
+    /// <summary>
+    /// dataEncryption
+    /// </summary>
+    /// <param name="data"></param>
+    /// <param name="alg"></param>
+    /// <param name="keyBytes"></param>
+    /// <returns></returns>
+
+    public byte[] Encrypt(byte[] data, Algorithm alg, byte[] keyBytes)
+    {
+        var key = Encoding.UTF8.GetString(keyBytes);
+        string cipherText ;
+        var i = (int)alg;
         switch (i)
         {
             case 0:
             {
-                //ECDH-ES with AES (advanced Encryption symetric)
-
-                var publicKey = new Jwk(
-                    crv: "P-256",
-                    x: "BHId3zoDv6pDgOUh8rKdloUZ0YumRTcaVDCppUPoYgk",
-                    y: "g3QIDhaWEksYtZ9OWjNHn9a6-i_P9o5_NrdISP0VWDU"
-                );
-
-                string token = JWT.Encode(payload, publicKey, JweAlgorithm.ECDH_ES, JweEncryption.A256GCM);
-                Console.WriteLine("token =" + token);
-
+                cipherText = JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS256_A128KW,
+                    JweEncryption.A128CBC_HS256);
 
                 break;
             }
             case 1:
             {
-                //HS256
-
-                string token = JWT.Encode(payload, "top secret", JweAlgorithm.PBES2_HS256_A128KW,
-                    JweEncryption.A256CBC_HS512);
-                Console.WriteLine("token =" + token);
-
+                cipherText = JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS384_A192KW,
+                    JweEncryption.A192CBC_HS384);
 
                 break;
             }
             default:
             {
-                //AES
-                var secretKey =
-                    Encoding.UTF8.GetBytes("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-
-                string token = Jose.JWT.Encode(payload, secretKey, JweAlgorithm.A256GCMKW,
+                cipherText = JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS512_A256KW,
                     JweEncryption.A256CBC_HS512);
-
-                Console.WriteLine("token =" + token);
-
-
                 break;
             }
+
+
         }
 
-        return default;
+        var encryptedData = Encoding.UTF8.GetBytes(cipherText);
+        return encryptedData;
+
     }
-
-
     /// <summary>
-    /// Decryptdata
+    /// dataDecryption
     /// </summary>
+    /// <param name="cipherText"></param>
+    /// <param name="alg"></param>
+    /// <param name="keyBytes"></param>
     /// <returns></returns>
-    public static async Task<string> Decryptdata(Algorithm alg)
+
+    public byte[] Decrypt(byte[] cipherText, Algorithm alg, byte[] keyBytes)
     {
-        // var privatekey = new X509Certificate2(Path.GetFullPath("/home/asma/openssl/domain.pfx"), "1234").GetECDsaPrivateKey();
-        // var dataToDecrypt = JWT.Decode(encryptdata, privatekey, JwsAlgorithm.ES256);
-
-        string encryptdata = await EncryptData(alg);
-
-
-        int i = (int) alg;
-
+        string key = Encoding.UTF8.GetString(keyBytes);
+        byte[] data;
+        var i = (int)alg;
         switch (i)
         {
             case 0:
             {
-                //ECDH-ES with AES (advanced Encryption symmetric)
-                var publicKey = new Jwk(
-                    crv: "P-256",
-                    x: "BHId3zoDv6pDgOUh8rKdloUZ0YumRTcaVDCppUPoYgk",
-                    y: "g3QIDhaWEksYtZ9OWjNHn9a6-i_P9o5_NrdISP0VWDU"
-                );
-
-                string decryptedData = JWT.Decode(encryptdata, publicKey);
-                Console.WriteLine("decrpteddata=" + decryptedData);
+                data = JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key, JweAlgorithm.PBES2_HS256_A128KW,
+                    JweEncryption.A128CBC_HS256);
+               
                 break;
             }
             case 1:
             {
-                //HS256
-
-                string decryptedData = JWT.Decode(encryptdata, "top secret");
-                Console.WriteLine("decryptedData=" + decryptedData);
+                data = JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key,
+                    JweAlgorithm.PBES2_HS384_A192KW, JweEncryption.A192CBC_HS384);
                 break;
+
             }
             default:
             {
-                var secretKey =
-                    Encoding.UTF8.GetBytes("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-                string decryptedData = JWT.Decode(encryptdata, secretKey);
-                Console.WriteLine("decryptedData=" + decryptedData);
+                data = JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key,
+                    JweAlgorithm.PBES2_HS512_A256KW, JweEncryption.A256CBC_HS512);
                 break;
-            }
-        }
 
-        return default;
+            }
+            
+        }
+        return data;
     }
 }
+
