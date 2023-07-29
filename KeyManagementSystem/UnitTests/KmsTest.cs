@@ -125,9 +125,9 @@ public class KmsTest
     public async Task F_RecuringJobTest()
     {
         string path = "/kms";
-
+        Dictionary<string, object> secretValue=new Dictionary<string, object>{{"new-secret","new-value"}};
         _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path));
+        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path,secretValue));
     }
 
     

@@ -34,7 +34,6 @@ public class Crypto : ICrypto
         var keyBytes = new byte[keySizeInByte];
         using var rng = new RNGCryptoServiceProvider();
         rng.GetBytes(keyBytes);
-        Console.WriteLine(keyBytes);
         return keyBytes;
 
 
@@ -94,7 +93,7 @@ public class Crypto : ICrypto
 
     public byte[] Decrypt(byte[] cipherText, Algorithm alg, byte[] keyBytes)
     {
-        string key = Encoding.UTF8.GetString(keyBytes);
+        var key = Encoding.UTF8.GetString(keyBytes);
         byte[] data;
         var i = (int)alg;
         switch (i)

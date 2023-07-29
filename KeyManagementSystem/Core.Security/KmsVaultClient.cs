@@ -95,7 +95,6 @@ public class KmsVaultClient : IKmsVaultClient
         IAuthMethodInfo userpass = new UserPassAuthMethodInfo(username: Username, password: Password);
         var vaultClientSettings = new VaultClientSettings(VaultAddress, userpass);
         IVaultClient vaultClient = new VaultClient(vaultClientSettings);
-
         return vaultClient;
     }
 
@@ -111,8 +110,8 @@ public class KmsVaultClient : IKmsVaultClient
 
         try
         {
-            Secret<SecretData> kv2Secret = await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: path);
-            string s = kv2Secret.Data.ToString();
+            var kv2Secret = await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: path);
+            var s = kv2Secret.Data.ToString();
             return s;
         }
         catch (Exception)
@@ -190,28 +189,28 @@ public class KmsVaultClient : IKmsVaultClient
     /// </summary>
     /// <param name="key"></param>
     /// <param name="path"></param>
-    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path)
+    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path,Dictionary<string, object> secretValue)
     {
-        DateTime localDate = DateTime.Now;
+        var localDate = DateTime.Now;
         var client = GetClient();
 
         try
         {
-            Secret<FullSecretMetadata> secretmetadata =
+            var secretmetadata =
                 await client.V1.Secrets.KeyValue.V2.ReadSecretMetadataAsync(key, path);
 
-            string dataCreatedTime = secretmetadata.Data.CreatedTime;
+            var dataCreatedTime = secretmetadata.Data.CreatedTime;
 
-            if (DateTime.TryParse(dataCreatedTime, out DateTime date))
+            if (DateTime.TryParse(dataCreatedTime, out var date))
             {
-                TimeSpan ts = localDate - date;
+                var ts = localDate - date;
 
                 if (ts.Days <= 2)
                 {
                     return true;
                 }
 
-                var secretValue = new Dictionary<string, object> {{"feel", "happy"}}; //TODO: Remove static data
+                 //TODO: Remove static data
                 await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
                 await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
 

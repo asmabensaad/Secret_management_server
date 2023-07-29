@@ -7,12 +7,9 @@ namespace DataAccess.Database.Repository;
 //TODO: Fix spelling
 public interface IAccountRepository
 {
-    //public ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token);
-    //public JwtSecurityToken CreateToken(List<Claim> authClaims);
-    string getMyName();
+    
+    string GetMyName();
 
 
     List<RegisterModel> GetUsers();
-    LoginModel Getuser(string email);
-    List<RegisterModel> updateuser(int id, RegisterModel request);
 }

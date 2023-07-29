@@ -15,7 +15,7 @@ public class AccountRepository : IAccountRepository
     }
 
 
-    public string getMyName()
+    public string GetMyName()
     {
         throw new NotImplementedException();
     }
@@ -25,12 +25,12 @@ public class AccountRepository : IAccountRepository
         throw new NotImplementedException();
     }
 
-    public LoginModel Getuser(string email)
+    public LoginModel GetUser(string email)
     {
         throw new NotImplementedException();
     }
 
-    public List<RegisterModel> updateuser(int id, RegisterModel request)
+    public List<RegisterModel> UpdateUser(int id, RegisterModel request)
     {
         throw new NotImplementedException();
     }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security;
 using System.Security.Authentication;
@@ -26,16 +27,16 @@ public class AuthenticateController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor httpC;
+    private readonly IHttpContextAccessor _httpC;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
     public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration, IHttpContextAccessor _httpC,SignInManager<ApplicationUser> signInManager)
+        IConfiguration configuration, IHttpContextAccessor httpC,SignInManager<ApplicationUser> signInManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        httpC = _httpC;
+        this._httpC = httpC;
         _signInManager = signInManager;
 
     }
@@ -58,12 +59,8 @@ public class AuthenticateController : ControllerBase
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+            authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
 
-
-            foreach (var userRole in userRoles)
-            {
-                authClaims.Add(new Claim(ClaimTypes.Role, userRole));
-            }
 
             var token = CreateToken(authClaims);
             var refreshToken = GenerateRefreshToken();
@@ -182,8 +179,8 @@ public class AuthenticateController : ControllerBase
             return BadRequest("Invalid client request");
         }
 
-        string? accessToken = tokenModel.AccessToken;
-        string? refreshToken = tokenModel.RefreshToken;
+        var accessToken = tokenModel.AccessToken;
+        var refreshToken = tokenModel.RefreshToken;
 
 
         var principal = GetPrincipalFromExpiredToken(accessToken);
@@ -192,7 +189,7 @@ public class AuthenticateController : ControllerBase
             return BadRequest("Invalid access token or refresh token");
 
         }
-        string username = principal.Identity.Name;
+        var username = principal.Identity?.Name;
 
         var user = await _userManager.FindByNameAsync(username);
         if (user == null || user.RfereshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
@@ -216,12 +213,12 @@ public class AuthenticateController : ControllerBase
     /// revoke a token from a specified user
     /// </summary>
     /// <param name="email"></param>
+    /// <param name="username"></param>
     /// <returns></returns>
-
     [Authorize]
     [HttpPost]
     [Route("revoke/{username}")]
-    public async Task<IActionResult> Revoke(string email)
+    public async Task<IActionResult> Revoke(string email, string username)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
@@ -262,11 +259,6 @@ public class AuthenticateController : ControllerBase
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
             ValidateLifetime = false,
-
-
-
-
-
         };
         var tokenHandler = new JwtSecurityTokenHandler();
         var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
@@ -299,46 +291,32 @@ public class AuthenticateController : ControllerBase
     [Route("getCurrentUser")]
     public async Task<IActionResult> GetUser()
     {
-
-
-        if (User.Identity != null && User.Identity.IsAuthenticated)
+        if (User.Identity is not { IsAuthenticated: true }) return BadRequest("user not authenticated");
+        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user != null)
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null)
+            return Ok(new
             {
-                return Ok(new
-                {
-                    userId = user.Id,
-                    UserName = user.UserName,
-                    Email = user.Email
-                });
-            }
-
-            
-            // var user = await _userManager.GetUserAsync(HttpContext.User);
-            // if (user == null)
-            // {
-            //     return Ok(new { Message = "User data not available" });
-            // }
-            //
-            // return Ok(new { UserName = user.UserName });
-            //
-            //
+                userId = user.Id,
+                UserName = user.UserName,
+                Email = user.Email
+            });
         }
+        
         return BadRequest("user not authenticated");
 
     }
     [Authorize]
     [HttpGet]
-  
-        int GetLoggedUserId()
+    public  int GetLoggedUserId()
         {
-            if (!User.Identity.IsAuthenticated)
+            if (User.Identity is { IsAuthenticated: false })
                 throw new AuthenticationException();
 
-            string userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier).Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
+            Debug.Assert(userId != null, nameof(userId) + " != null");
             return int.Parse(userId);
         }
         

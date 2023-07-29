@@ -97,5 +97,6 @@ public interface IKmsVaultClient
     /// </summary>
     /// <param name="model"></param>
     /// <param name="path"></param>
-    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path);
+    /// <param name="secretValue"></param>
+    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path,Dictionary<string, object> secretValue);
 }

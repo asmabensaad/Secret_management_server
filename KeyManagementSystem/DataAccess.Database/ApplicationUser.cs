@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.AspNetCore.Identity;
 
 namespace DataAccess.Database;
