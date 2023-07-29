@@ -1,7 +1,6 @@
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
 using VaultSharp.V1.AuthMethods.UserPass;
-using VaultSharp.V1.Commons;
 
 namespace Core.Security;
 
@@ -189,7 +188,8 @@ public class KmsVaultClient : IKmsVaultClient
     /// </summary>
     /// <param name="key"></param>
     /// <param name="path"></param>
-    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path,Dictionary<string, object> secretValue)
+    /// <param name="secretValue"></param>
+    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path, Dictionary<string, object> secretValue)
     {
         var localDate = DateTime.Now;
         var client = GetClient();
@@ -210,11 +210,8 @@ public class KmsVaultClient : IKmsVaultClient
                     return true;
                 }
 
-                 //TODO: Remove static data
                 await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
                 await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
-
-
                 return true;
             }
         }

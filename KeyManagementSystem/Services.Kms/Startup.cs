@@ -5,9 +5,6 @@ using StackExchange.Redis;
 
 namespace Services.Kms;
 
-//TODO: Follow naming convention
-//TODO: Remove commented code
-//TODO: Fix spelling
 public class Startup
 {
     private const string CorsPolicy = "CORS";
@@ -16,7 +13,7 @@ public class Startup
     {
         KeepAlive = 0,
         AllowAdmin = true,
-        EndPoints = { { "127.0.0.1", 6379 } },
+        EndPoints = {{"127.0.0.1", 6379}},
         ConnectTimeout = 5000,
         ConnectRetry = 3,
         SyncTimeout = 5000,
@@ -49,12 +46,14 @@ public class Startup
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors(CorsPolicy);
+
+        app.UseAuthentication();
         app.UseAuthorization();
-        app.UseHangfireDashboard("/jobs");
 
         app.UseEndpoints(builder => builder.MapControllers());
+
+        app.UseHangfireDashboard("/jobs");
     }
 }

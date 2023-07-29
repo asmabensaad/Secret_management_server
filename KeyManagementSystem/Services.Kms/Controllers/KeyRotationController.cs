@@ -4,9 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Services.Kms.Controllers;
 
-//TODO: Follow naming convention
-//TODO: Remove commented code
-//TODO: Fix spelling
 [ApiController]
 [Route("/api/v1.0/kms/[controller]/[action]")]
 public class KeyRotationController : ControllerBase
@@ -37,6 +34,7 @@ public class KeyRotationController : ControllerBase
     [HttpPut]
     public Task<bool> ProcessKeyAsync(string secret,Dictionary<string, object> secretValue)
     {
+        //TODO: Remove hardcoded hosts and use IConfiguration with appsettings.json 
         return _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200")
             .SetUserName(username: "admin")
             .SetPassword(password: "admin")

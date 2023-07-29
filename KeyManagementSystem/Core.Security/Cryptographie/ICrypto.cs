@@ -1,6 +1,7 @@
 
 using Jose;
 namespace Core.Security.Cryptographie;
+//TODO: Document the code.
 
 public interface ICrypto
 {

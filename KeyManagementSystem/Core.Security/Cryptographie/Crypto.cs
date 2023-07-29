@@ -6,10 +6,9 @@ using Jose;
 
 namespace Core.Security.Cryptographie;
 
-//TODO: Add an interface, and document the code.
-//TODO: Remove any console log
-//TODO: Follow naming convention
-//TODO: Remove commented code
+//TODO: Format code
+
+/// <inheritdoc cref="ICrypto"/>
 public class Crypto : ICrypto
 {
     

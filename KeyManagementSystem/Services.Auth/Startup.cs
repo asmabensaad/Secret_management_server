@@ -6,22 +6,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
-using Swashbuckle.AspNetCore;
 namespace Services.Auth;
 
 public class Startup
 {
-    
     private const string CorsPolicy = "CORS";
-  
 
-   private readonly IConfiguration _configuration;
-   
-   public Startup(IConfiguration configuration)
-   {
-       this._configuration = configuration;
-   }
-   public void ConfigureServices(IServiceCollection services)
+
+    private readonly IConfiguration _configuration;
+
+    public Startup(IConfiguration configuration)
+    {
+        this._configuration = configuration;
+    }
+
+    public void ConfigureServices(IServiceCollection services)
     {
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(_configuration.GetConnectionString("AuthenticationDbConnection")));
@@ -32,7 +31,7 @@ public class Startup
         {
             option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                In=ParameterLocation.Header,
+                In = ParameterLocation.Header,
                 Description = "Please enter into field the word 'Bearer' following by space and JWT",
                 Name = "Authorization",
                 Type = SecuritySchemeType.Http,
@@ -47,17 +46,18 @@ public class Startup
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.SecurityScheme,
-                            Id="Bearer"
+                            Id = "Bearer"
                         }
                     },
                     new List<string>()
-                    }
-                
+                }
             });
         });
+
         services.AddAuthorization();
         services.AddMvc();
         services.AddControllers();
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -78,11 +78,10 @@ public class Startup
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]))
             };
         });
+
         services.AddCors(options => options.AddPolicy(name: CorsPolicy,
             policy => { policy.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin(); }));
-
     }
-
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
@@ -92,12 +91,12 @@ public class Startup
             app.UseSwaggerUI();
         }
 
-        app.UseAuthentication();
-       
-        app.UseHttpsRedirection();
         app.UseRouting();
         app.UseCors(CorsPolicy);
+
+        app.UseAuthentication();
         app.UseAuthorization();
+
         app.UseEndpoints(builder => builder.MapControllers());
     }
 }
