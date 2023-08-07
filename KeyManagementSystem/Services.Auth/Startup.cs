@@ -1,9 +1,8 @@
-using System.Text;
+using Core.Security.Authentication;
 using DataAccess.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 namespace Services.Auth;
@@ -15,7 +14,7 @@ public class Startup
 
     public Startup(IConfiguration configuration)
     {
-        this._configuration = configuration;
+        _configuration = configuration;
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -56,6 +55,8 @@ public class Startup
         services.AddMvc();
         services.AddControllers();
 
+        var tokenHandler = new KmsTokenHandler(_configuration);
+
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -63,18 +64,9 @@ public class Startup
             options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
         }).AddJwtBearer(options =>
         {
-            options.SaveToken = true;
             options.RequireHttpsMetadata = false;
-            options.TokenValidationParameters = new TokenValidationParameters()
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidAudience = _configuration["JWT:ValidAudience"],
-                ValidIssuer = _configuration["JWT:ValidIssuer"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]))
-            };
+            options.Audience = "http://localhost:42036";
+            options.TokenValidationParameters = tokenHandler.GetValidationParameters();
         });
 
         services.AddCors(options => options.AddPolicy(name: CorsPolicy,

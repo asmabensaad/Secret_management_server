@@ -3,6 +3,7 @@ using System.Security.Authentication;
 using System.Security.Claims;
 using DataAccess.Database;
 using DataAccess.Models.AuthService;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ namespace Services.Auth.Controllers;
 //TODO: Remove commented code
 //TODO: Fix spelling
 [Route("api/[controller]")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class UsersController : Controller
 {
@@ -53,7 +55,6 @@ public class UsersController : Controller
     /// Get Current User
     /// </summary>
     /// <returns></returns>
-    [Authorize]
     [HttpGet]
     [Route("getCurrentUser")]
     public async Task<IActionResult> GetUser()
@@ -74,7 +75,6 @@ public class UsersController : Controller
         return BadRequest("user not authenticated");
     }
 
-    [Authorize]
     [HttpGet]
     public int GetLoggedUserId()
     {

@@ -1,14 +1,12 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
+using Core.Security.Authentication;
 using DataAccess.Database;
+using DataAccess.Models.Api;
 using DataAccess.Models.AuthService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.IdentityModel.Tokens;
-using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace Services.Auth.Controllers;
 
@@ -21,7 +19,7 @@ public class AuthenticateController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly IConfiguration _configuration;
+    private readonly KmsTokenHandler _tokenHandler;
 
     public AuthenticateController(
         UserManager<ApplicationUser> userManager,
@@ -31,39 +29,7 @@ public class AuthenticateController : ControllerBase
     {
         _userManager = userManager;
         _roleManager = roleManager;
-        _configuration = configuration;
-    }
-
-    /// <summary>
-    /// Authentication
-    /// </summary>
-    /// <param name="model"></param>
-    /// <returns></returns>
-    [HttpPost]
-    [Route("login")]
-    public async Task<IActionResult> Login([FromBody] LoginModel model)
-    {
-        var user = await _userManager.FindByEmailAsync(model.Email);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) return Unauthorized();
-        var userRoles = await _userManager.GetRolesAsync(user);
-        var authClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        };
-        authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
-        var token = CreateToken(authClaims);
-        var refreshToken = GenerateRefreshToken();
-        _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
-        user.RfereshToken = refreshToken;
-        user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
-        await _userManager.UpdateAsync(user);
-        return Ok(new
-        {
-            Token = new JwtSecurityTokenHandler().WriteToken(token),
-            RefreshToken = refreshToken,
-            Expiration = token.ValidTo
-        });
+        _tokenHandler = new KmsTokenHandler(configuration);
     }
 
     /// <summary>
@@ -79,7 +45,7 @@ public class AuthenticateController : ControllerBase
         if (userExist != null)
 
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new Response {Status = "Error", Message = "User already exist!"});
+                new Response { Status = "Error", Message = "User already exist!" });
         ApplicationUser user = new()
         {
             Email = model.Email,
@@ -91,7 +57,8 @@ public class AuthenticateController : ControllerBase
         if (!result.Succeeded)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response
-                    {Status = "Error", Message = "User creation failed! Please check user details and try again."});
+                    { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+
         if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
             await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
         if (!await _roleManager.RoleExistsAsync(UserRoles.User))
@@ -106,39 +73,43 @@ public class AuthenticateController : ControllerBase
             await _userManager.AddToRoleAsync(user, UserRoles.User);
         }
 
-        return Ok(new Response {Status = "Success", Message = "User created successfully!"});
+        return Ok(new Response { Status = "Success", Message = "User created successfully!" });
     }
 
     /// <summary>
-    /// Generate the refresh Token
+    /// Authentication
     /// </summary>
+    /// <param name="model"></param>
     /// <returns></returns>
-    private static string GenerateRefreshToken()
+    [HttpPost]
+    [Route("login")]
+    public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        var randomNumber = new byte[64];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        var user = await _userManager.FindByEmailAsync(model.Email);
+
+        if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) return Unauthorized();
+
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        var authClaims = new List<Claim>
+        {
+            new("jti", Guid.NewGuid().ToString()),
+            new("username", user.UserName),
+            new("sub", user.Id)
+        };
+
+        authClaims.AddRange(userRoles.Select(userRole => new Claim("roles", userRole)));
+
+        return Ok(new ApiResponse<object>
+        {
+            Data = new
+            {
+                access_token = _tokenHandler.CreateToken(authClaims),
+                refresh_token = _tokenHandler.CreateRefreshToken(user.Id)
+            }
+        });
     }
 
-    /// <summary>
-    /// create Token 
-    /// </summary>
-    /// <param name="authClaims"></param>
-    /// <returns></returns>
-    private JwtSecurityToken CreateToken(IEnumerable<Claim> authClaims) // TODO: Use username and password
-    {
-        var authSigninKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-        _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out var tokenValidityInMinutes);
-        var token = new JwtSecurityToken(
-            issuer: _configuration["JWT:ValidIssuer"],
-            audience: _configuration["JWT:ValidAudience"],
-            expires: DateTime.Now.AddMinutes(tokenValidityInMinutes),
-            claims: authClaims,
-            signingCredentials: new SigningCredentials(authSigninKey, SecurityAlgorithms.HmacSha256)
-        );
-        return token;
-    }
 
     /// <summary>
     /// Refresh Token 
@@ -147,7 +118,7 @@ public class AuthenticateController : ControllerBase
     /// <returns></returns>
     [HttpPost]
     [Route("refresh-token")]
-    public IActionResult RefreshToken(
+    public async Task<IActionResult> RefreshToken(
         [FromHeader(Name = "refresh_token"), BindRequired]
         string refreshToken)
     {
@@ -156,6 +127,30 @@ public class AuthenticateController : ControllerBase
             return Unauthorized();
         }
 
-        throw new NotImplementedException();
+        if (!_tokenHandler.IsValidateToken(refreshToken)) return Unauthorized();
+
+        var token = new JwtSecurityToken(refreshToken);
+
+        var user = await _userManager.FindByIdAsync(token.Subject);
+
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        var authClaims = new List<Claim>
+        {
+            new("jti", Guid.NewGuid().ToString()),
+            new("username", user.UserName),
+            new("sub", user.Id)
+        };
+
+        authClaims.AddRange(userRoles.Select(userRole => new Claim("roles", userRole)));
+
+        return Ok(new ApiResponse<object>
+        {
+            Data = new
+            {
+                access_token = _tokenHandler.CreateToken(authClaims),
+                refresh_token = _tokenHandler.CreateRefreshToken(user.Id)
+            }
+        });
     }
 }
