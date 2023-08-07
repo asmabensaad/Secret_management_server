@@ -1,0 +1,10 @@
+namespace DataAccess.Models.AuthService;
+
+/// <summary>
+/// User Roles
+/// </summary>
+public abstract class UserRoles
+{
+    public const string Admin = "Admin";
+    public const string User = "User";
+}

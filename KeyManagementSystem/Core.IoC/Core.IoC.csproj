@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Core.Security\Core.Security.csproj" />
+      <ProjectReference Include="..\DataAccess.Database\DataAccess.Database.csproj" />
+      <ProjectReference Include="..\DataAccess.Models\DataAccess.Models.csproj" />
+      <ProjectReference Include="..\DataAccess.Security\DataAccess.Security.csproj" />
+    </ItemGroup>
+
+</Project>
