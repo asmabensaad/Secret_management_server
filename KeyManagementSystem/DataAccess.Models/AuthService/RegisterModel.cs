@@ -1,20 +1,41 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Auth2;
+namespace DataAccess.Models.AuthService;
 
+/// <summary>
+/// Register Model
+/// </summary>
 public class RegisterModel
 {
-    public int id { get; }
-    [Required(ErrorMessage = "User Name is required")]
-    public string? Username { get; set; }
+    /// <summary>
+    /// auto increment field Id
+    /// </summary>
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public string Id { get; init; }
 
+    /// <summary>
+    /// UserName
+    /// </summary>
+    [Required(ErrorMessage = "User Name is required")]
+    public string Username { get; init; }
+
+    /// <summary>
+    /// Email
+    /// </summary>
     [EmailAddress]
     [Required(ErrorMessage = "Email is required")]
-    public string? Email { get; set; }
+    public string Email { get; init; }
 
+    /// <summary>
+    /// Password 
+    /// </summary>
     [Required(ErrorMessage = "Password is required")]
-    public string? Password { get; set; }
-   
-    public string? contactNumber { get; set; }
+    public string Password { get; set; }
 
+    /// <summary>
+    /// Phone Number
+    /// </summary>
+    public string ContactNumber { get; init; }
 }

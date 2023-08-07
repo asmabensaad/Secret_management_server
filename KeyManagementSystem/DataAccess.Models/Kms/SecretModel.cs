@@ -25,8 +25,4 @@ public class SecretModel
     [MaxLength(255)]
     [MinLength(1)]
     public Dictionary<string, object> SecretValue { get; set; }
- 
-
-
-
 }

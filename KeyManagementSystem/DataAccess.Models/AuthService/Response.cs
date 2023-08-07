@@ -1,7 +1,17 @@
-namespace Auth2;
+namespace DataAccess.Models.AuthService;
 
+/// <summary>
+/// Class Response 
+/// </summary>
 public class Response
 {
-    public string? Status { get; set; }
-    public string? Message { get; set; }
+    /// <summary>
+    /// Status Code 
+    /// </summary>
+    public string Status { get; set; }
+
+    /// <summary>
+    /// Message Response
+    /// </summary>
+    public string Message { get; set; }
 }

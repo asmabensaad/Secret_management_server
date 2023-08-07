@@ -9,6 +9,7 @@
         <PackageReference Include="Hangfire" Version="1.8.2" />
         <PackageReference Include="Hangfire.Core" Version="1.8.2" />
         <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.7" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.20" />
         <PackageReference Include="StackExchange.Redis" Version="2.6.111" />
         <PackageReference Include="HashiCorp.Vault" Version="0.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />

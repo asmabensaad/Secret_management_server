@@ -1,6 +1,10 @@
+using Core.Security.Vault;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using VaultSharp;
 using VaultSharp.V1.AuthMethods;
 using VaultSharp.V1.AuthMethods.UserPass;
+using VaultSharp.V1.Commons;
 
 namespace Core.Security;
 
@@ -92,26 +96,20 @@ public class KmsVaultClient : IKmsVaultClient
         }
 
         IAuthMethodInfo userpass = new UserPassAuthMethodInfo(username: Username, password: Password);
-        var vaultClientSettings = new VaultClientSettings(VaultAddress, userpass);
+        var vaultClientSettings = new VaultClientSettings($"{VaultAddress}:{Port}", userpass);
         IVaultClient vaultClient = new VaultClient(vaultClientSettings);
         return vaultClient;
     }
 
 
-    /// <summary>
-    /// GetSecret
-    /// </summary>
-    /// <returns></returns>
-    /// <exception cref="CoreSecurityException"></exception>
-    public async Task<string> GetSecretAsync(string key, string path)
+    /// <inheritdoc cref="IKmsVaultClient.GetSecretAsync"/>
+    public async Task<Secret<SecretData>> GetSecretAsync(string key, string path)
     {
         var client = GetClient();
 
         try
         {
-            var kv2Secret = await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: path);
-            var s = kv2Secret.Data.ToString();
-            return s;
+            return await client.V1.Secrets.KeyValue.V2.ReadSecretAsync(key, mountPoint: path);
         }
         catch (Exception)
         {
@@ -119,55 +117,41 @@ public class KmsVaultClient : IKmsVaultClient
         }
     }
 
-    /// <summary>
-    /// Createsecret
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <param name="path"></param>
-    /// <exception cref="CoreSecurityException"></exception>
-    public async Task<bool> CreatesecretAsync(string key, Dictionary<string, object> value, string path)
+    /// <inheritdoc cref="IKmsVaultClient.CreatesecretAsync"/>
+    public async Task<Secret<SecretData>> CreatesecretAsync(string key, Dictionary<string, object> value, string path)
     {
         try
         {
             var client = GetClient();
 
             await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, value, null, path);
-            return true;
+            return await GetSecretAsync(key, path);
         }
         catch (Exception)
         {
-            return false;
+            return null;
         }
     }
 
-    /// <summary>
-    /// UpdateSecret
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="secretValue"></param>
-    /// <param name="path"></param>
-    public async Task<bool> UpdateSecretAsync(string key, IDictionary<string, object> secretValue, string path)
+    /// <inheritdoc cref="IKmsVaultClient.UpdateSecretAsync"/>
+    public async Task<Secret<SecretData>> UpdateSecretAsync(string key, IDictionary<string, object> secretValue,
+        string path)
     {
         var client = GetClient();
         try
         {
             await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
             await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
-            return true;
+            return await GetSecretAsync(key, path);
         }
         catch (Exception)
 
         {
-            return false;
+            return null;
         }
     }
 
-    /// <summary>
-    /// DeleteSecret
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="secretPath"></param>
+    /// <inheritdoc cref="IKmsVaultClient.DeleteSecretAsync"/>
     public async Task<bool> DeleteSecretAsync(string key, string secretPath)
     {
         var client = GetClient();
@@ -183,12 +167,7 @@ public class KmsVaultClient : IKmsVaultClient
         }
     }
 
-    /// <summary>
-    /// RecurringJobsRotateKey
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="path"></param>
-    /// <param name="secretValue"></param>
+    /// <inheritdoc cref="IKmsVaultClient.RecurringJobsRotateKeyAsync"/>
     public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path, Dictionary<string, object> secretValue)
     {
         var localDate = DateTime.Now;
@@ -221,5 +200,86 @@ public class KmsVaultClient : IKmsVaultClient
         }
 
         return false;
+    }
+
+    /// <inheritdoc cref="IKmsVaultClient.DestroySecretAsync"/>
+    public async Task<bool> DestroySecretAsync(string path, IList<int> versionTodelete, string key)
+    {
+        var client = GetClient();
+        // IList<int> version = new List<int> {1};
+        try
+        {
+            var destroyedVersions = new List<int>();
+            foreach (var version in versionTodelete)
+            {
+                await client.V1.Secrets.KeyValue.V2.DestroySecretVersionsAsync(path, versionTodelete, key);
+                destroyedVersions.Add(version);
+            }
+
+            return destroyedVersions.Count > 0;
+        }
+        catch (Exception)
+        {
+            throw new CoreSecurityException("secret not found in vault");
+        }
+    }
+
+    /// <inheritdoc cref="IKmsVaultClient.GetAllAsync"/>
+    public async Task<VaultDataModel> GetAllAsync(string mountPoint)
+    {
+        try
+        {
+            if (await GetTokenAsync() is var token && string.IsNullOrWhiteSpace(token))
+            {
+                return null;
+            }
+
+            using var client = new HttpClient();
+            client.DefaultRequestHeaders.TryAddWithoutValidation("X-Vault-Token", token);
+            var url = $"{VaultAddress}:{Port}/v1/{mountPoint}/metadata/";
+            var result = await client.GetAsync($"{VaultAddress}:{Port}/v1/{mountPoint}/metadata/?list=true");
+            Console.WriteLine(result.StatusCode);
+
+            var responseBody = await result.Content.ReadAsStringAsync();
+
+            var response = JsonConvert.DeserializeObject<VaultListSecretModel>(responseBody);
+
+            return response.VaultData;
+        }
+        catch (HttpRequestException)
+        {
+            throw new BadHttpRequestException("bad request");
+        }
+    }
+
+    /// <summary>
+    /// GetTokenAsync 
+    /// </summary>
+    /// <returns></returns>
+    private async Task<string> GetTokenAsync()
+    {
+        try
+        {
+            using var client = new HttpClient();
+
+            client.DefaultRequestHeaders.TryAddWithoutValidation("content-type", "application/json; charset=utf-8");
+
+            var result = await client.PostAsync($"{VaultAddress}:{Port}/v1/auth/userpass/login/{Username}",
+                new StringContent(JsonConvert.SerializeObject(new
+                {
+                    password = Password
+                })));
+
+            Console.WriteLine(result.StatusCode);
+
+            var responseBody = await result.Content.ReadAsStringAsync();
+
+            var token = JsonConvert.DeserializeObject<VaultTokenResponse>(responseBody);
+            return token?.Auth?.ClientToken;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }

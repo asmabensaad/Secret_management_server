@@ -5,8 +5,8 @@ using System.Security.Authentication;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Auth2;
 using DataAccess.Database;
+using DataAccess.Models.AuthService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -23,22 +23,18 @@ namespace Services.Auth.Controllers;
 [ApiController]
 public class AuthenticateController : ControllerBase
 {
-
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-    private readonly IHttpContextAccessor _httpC;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
     public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration, IHttpContextAccessor httpC,SignInManager<ApplicationUser> signInManager)
+        IConfiguration configuration, SignInManager<ApplicationUser> signInManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        this._httpC = httpC;
         _signInManager = signInManager;
-
     }
 
     /// <summary>
@@ -50,34 +46,27 @@ public class AuthenticateController : ControllerBase
     [Route("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel model)
     {
-        var user = await _userManager.FindByEmailAsync(model.email);
-        if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password)) return Unauthorized();
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var authClaims = new List<Claim>
         {
-            var userRoles = await _userManager.GetRolesAsync(user);
-            var authClaims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            };
-            authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
-
-
-            var token = CreateToken(authClaims);
-            var refreshToken = GenerateRefreshToken();
-            _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
-            user.RfereshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
-            await _userManager.UpdateAsync(user);
-            return Ok(new
-            {
-                Token = new JwtSecurityTokenHandler().WriteToken(token),
-                RefreshToken = refreshToken,
-                Expiration = token.ValidTo
-            });
-
-        }
-
-        return Unauthorized();
+            new Claim(ClaimTypes.Name, user.UserName),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        };
+        authClaims.AddRange(userRoles.Select(userRole => new Claim(ClaimTypes.Role, userRole)));
+        var token = CreateToken(authClaims);
+        var refreshToken = GenerateRefreshToken();
+        _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
+        user.RfereshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
+        await _userManager.UpdateAsync(user);
+        return Ok(new
+        {
+            Token = new JwtSecurityTokenHandler().WriteToken(token),
+            RefreshToken = refreshToken,
+            Expiration = token.ValidTo
+        });
     }
 
     /// <summary>
@@ -85,7 +74,6 @@ public class AuthenticateController : ControllerBase
     /// </summary>
     /// <param name="model"></param>
     /// <returns></returns>
-
     [HttpPost]
     [Route("register")]
     public async Task<IActionResult> Register([FromBody] RegisterModel model)
@@ -100,8 +88,7 @@ public class AuthenticateController : ControllerBase
             Email = model.Email,
             SecurityStamp = Guid.NewGuid().ToString(),
             UserName = model.Username,
-            PhoneNumber = model.contactNumber,
-
+            PhoneNumber = model.ContactNumber,
         };
         var result = await _userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
@@ -123,22 +110,18 @@ public class AuthenticateController : ControllerBase
         }
 
         return Ok(new Response { Status = "Success", Message = "User created successfully!" });
-
-
     }
 
     /// <summary>
     /// Generate the refresh Token
     /// </summary>
     /// <returns></returns>
-
-    private string GenerateRefreshToken()
+    private static string GenerateRefreshToken()
     {
         var randomNumber = new byte[64];
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(randomNumber);
         return Convert.ToBase64String(randomNumber);
-
     }
 
     /// <summary>
@@ -146,30 +129,25 @@ public class AuthenticateController : ControllerBase
     /// </summary>
     /// <param name="authClaims"></param>
     /// <returns></returns>
-
-
-    private JwtSecurityToken CreateToken(List<Claim> authClaims)
+    private JwtSecurityToken CreateToken(IEnumerable<Claim> authClaims)
     {
         var authSiginKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-        _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out int tokenValidityInMinutes);
+        _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out var tokenValidityInMinutes);
         var token = new JwtSecurityToken(
             issuer: _configuration["JWT:ValidIssuer"],
             audience: _configuration["JWT:ValidAudience"],
-
             expires: DateTime.Now.AddMinutes(tokenValidityInMinutes),
             claims: authClaims,
             signingCredentials: new SigningCredentials(authSiginKey, SecurityAlgorithms.HmacSha256)
         );
         return token;
-
     }
 
     /// <summary>
-    /// 
+    /// Refresh Token 
     /// </summary>
     /// <param name="tokenModel"></param>
     /// <returns></returns>
-
     [HttpPost]
     [Route("refresh-token")]
     public async Task<IActionResult> RefreshToken(TokenModel? tokenModel)
@@ -181,14 +159,12 @@ public class AuthenticateController : ControllerBase
 
         var accessToken = tokenModel.AccessToken;
         var refreshToken = tokenModel.RefreshToken;
-
-
         var principal = GetPrincipalFromExpiredToken(accessToken);
         if (principal == null)
         {
             return BadRequest("Invalid access token or refresh token");
-
         }
+
         var username = principal.Identity?.Name;
 
         var user = await _userManager.FindByNameAsync(username);
@@ -206,7 +182,6 @@ public class AuthenticateController : ControllerBase
             accessToken = new JwtSecurityTokenHandler().WriteToken(newAcessToken),
             refreshToken = newRefreshToken
         });
-
     }
 
     /// <summary>
@@ -243,7 +218,6 @@ public class AuthenticateController : ControllerBase
         {
             user.RfereshToken = null;
             await _userManager.UpdateAsync(user);
-
         }
 
         return NoContent();
@@ -269,23 +243,29 @@ public class AuthenticateController : ControllerBase
         return principal;
     }
 
+    /// <summary>
+    /// Get List Of All  Users
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     [Route("GetAllUsers")]
     public async Task<IActionResult> GetUsers()
     {
         var allUsers = await _userManager.Users.ToListAsync();
-        var userInformationList = allUsers.Select(u => new RegisterModel()
+        var userInformationList = allUsers.Select(u => new RegisterModel
         {
-
+            Id=u.Id,
             Username = u.UserName,
             Email = u.Email,
-            contactNumber = u.PhoneNumber
-
-
+            ContactNumber = u.PhoneNumber
         }).ToList();
         return Ok(userInformationList);
     }
 
+    /// <summary>
+    /// Get Current User
+    /// </summary>
+    /// <returns></returns>
     [Authorize]
     [HttpGet]
     [Route("getCurrentUser")]
@@ -299,30 +279,31 @@ public class AuthenticateController : ControllerBase
             return Ok(new
             {
                 userId = user.Id,
-                UserName = user.UserName,
-                Email = user.Email
+                user.UserName,
+                user.Email
             });
         }
-        
         return BadRequest("user not authenticated");
-
     }
+
     [Authorize]
     [HttpGet]
-    public  int GetLoggedUserId()
-        {
-            if (User.Identity is { IsAuthenticated: false })
-                throw new AuthenticationException();
+    public int GetLoggedUserId()
+    {
+        if (User.Identity is { IsAuthenticated: false })
+            throw new AuthenticationException();
 
-            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            Debug.Assert(userId != null, nameof(userId) + " != null");
-            return int.Parse(userId);
-        }
-        
-    
+        Debug.Assert(userId != null, nameof(userId) + " != null");
+        return int.Parse(userId);
+    }
 
-   [Authorize]
+    /// <summary>
+    /// Logout
+    /// </summary>
+    /// <returns></returns>
+    [Authorize]
     [HttpPost]
     [Route("logout")]
     public async Task<IActionResult> Logout()
@@ -337,6 +318,48 @@ public class AuthenticateController : ControllerBase
         await _signInManager.SignOutAsync();
         return Ok(new { message = "logout successful" });
     }
-    
-}
 
+    //
+    // [Route("UpdateUser")]
+    // [HttpPost]
+    // public async Task<IActionResult> UpdateUser(RegisterModel model )
+    // {
+    //     ApplicationUser user = await _userManager.FindByEmailAsync(model.Email);
+    //     if (user != null)
+    //     {
+    //         if (!string.IsNullOrEmpty(model.Email))
+    //             user.Email = model.Email;
+    //         else 
+    //             ModelState.AddModelError("","email cannot be empty");
+    //         if (!string.IsNullOrEmpty(model.Username))
+    //             user.UserName = model.Username;
+    //    
+    //         
+    //         
+    //
+    //     }
+        // var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        // var user = await _userManager.FindByIdAsync(userId);
+        // if (user == null)
+        // {
+        //     return BadRequest("user not found");
+        // }
+        //
+        // user.Email = model.Email;
+        // user.UserName = model.Username;
+        // user.PhoneNumber = model.ContactNumber;
+        //
+        // var result = await _userManager.UpdateAsync(user);
+        // if (result.Succeeded)
+        // {
+        //     return Ok("user updated successfuly");
+        // }
+        // else
+        // {
+        //     var errors = result.Errors.Select(e => e.Description);
+        //     return BadRequest(new { errors });
+        // }
+    }
+    
+    
+    

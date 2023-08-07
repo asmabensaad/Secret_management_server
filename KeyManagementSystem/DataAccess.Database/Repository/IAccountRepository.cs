@@ -1,4 +1,5 @@
 using Auth2;
+using DataAccess.Models.AuthService;
 
 namespace DataAccess.Database.Repository;
 

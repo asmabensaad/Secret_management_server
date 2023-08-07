@@ -1,7 +1,17 @@
-namespace Auth2;
+namespace DataAccess.Models.AuthService;
 
+/// <summary>
+/// Token Model
+/// </summary>
 public class TokenModel
 {
-    public string? AccessToken { get; set; }
-    public string? RefreshToken { get; set; }
+    /// <summary>
+    /// Access Token
+    /// </summary>
+    public string AccessToken { get; set; }
+
+    /// <summary>
+    /// Refresh Token
+    /// </summary>
+    public string RefreshToken { get; set; }
 }

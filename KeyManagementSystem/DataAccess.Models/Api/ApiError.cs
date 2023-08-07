@@ -9,10 +9,16 @@ namespace DataAccess.Models.Api;
 public enum ApiError
 {
     /// <summary>
-    /// Invalid data code
+    /// Invalid data error code
     /// </summary>
     [EnumMember(Value = "INVALID_DATA")] [JsonProperty("INVALID_DATA")]
     InvalidData,
+    
+    /// <summary>
+    /// Secret not found error code
+    /// </summary>
+    [EnumMember(Value = "SECRET_NOT_FOUND")] [JsonProperty("SECRET_NOT_FOUND")]
+    SecretNotFound,
 
     /// <summary>
     /// Server error code

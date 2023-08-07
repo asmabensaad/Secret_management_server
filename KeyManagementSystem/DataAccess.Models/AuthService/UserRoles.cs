@@ -1,6 +1,9 @@
-namespace Auth2;
+namespace DataAccess.Models.AuthService;
 
-public class UserRoles
+/// <summary>
+/// User Roles
+/// </summary>
+public abstract class UserRoles
 {
     public const string Admin = "Admin";
     public const string User = "User";

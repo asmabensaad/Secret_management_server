@@ -6,7 +6,7 @@ namespace UnitTests;
 [TestClass]
 public class KmsTest
 {
-    readonly KmsVaultClient _kmsVaultClient = new();
+    readonly KmsVaultClient  _kmsVaultClient = new();
 
     /// <summary>
     /// GetClient_returnClientVaultIfConected_ReturnNull
@@ -31,20 +31,26 @@ public class KmsTest
     /// TestCreatesecret
     /// </summary>
     [TestMethod]
-    public async Task B_TestCreatesecret()
+    public async Task B_TestCreatesecretAsync()
     {
+        
         //Arrange
         const string path = "kms/";
+        var secretValue = new Dictionary<string, object>
+        {
+            { "username", "testuser" },
+            { "password", "testpassword" }
+        };
         //Action
         try
         {
             _kmsVaultClient.SetPassword(password: "admin")
                 .SetUserName("admin")
                 .SetVaultAddress("http://127.0.0.1:8200");
-
+           
             //Assert 
-            Assert.IsTrue(await _kmsVaultClient.CreatesecretAsync("first",
-                new Dictionary<string, object> { { "test", "x" } }, path));
+            Assert.IsNotNull(await _kmsVaultClient.CreatesecretAsync("first",
+                secretValue, path));
         }
         // ReSharper disable once EmptyGeneralCatchClause
         catch (Exception e)
@@ -80,8 +86,8 @@ public class KmsTest
     [TestMethod]
     public async Task D_TestUpdatesecretAsync()
     {
-        string key = "first";
-        string path = "/kms";
+        const string key = "first";
+        const string path = "/kms";
         var secretvalue = new Dictionary<string, object> { { "feel", "good" } };
 
         try
@@ -90,7 +96,7 @@ public class KmsTest
 
             var result = await _kmsVaultClient.UpdateSecretAsync(key, secretvalue
                 , path);
-            Assert.IsTrue(result);
+            Assert.IsNotNull(result);
         }
         catch (Exception e)
         {
@@ -104,8 +110,8 @@ public class KmsTest
     [TestMethod]
     public async Task E_TestDeletesecretAsync()
     {
-        string secretpath = "/kms";
-        string key = "aa";
+        const string secretpath = "/kms";
+        const string key = "aa";
         try
         {
             _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
@@ -124,8 +130,8 @@ public class KmsTest
     [TestMethod]
     public async Task F_RecuringJobTest()
     {
-        string path = "/kms";
-        Dictionary<string, object> secretValue=new Dictionary<string, object>{{"new-secret","new-value"}};
+        const string path = "/kms";
+        var secretValue=new Dictionary<string, object>{{"new-secret","new-value"}};
         _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
         Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path,secretValue));
     }

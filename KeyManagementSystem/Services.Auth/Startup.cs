@@ -11,8 +11,6 @@ namespace Services.Auth;
 public class Startup
 {
     private const string CorsPolicy = "CORS";
-
-
     private readonly IConfiguration _configuration;
 
     public Startup(IConfiguration configuration)

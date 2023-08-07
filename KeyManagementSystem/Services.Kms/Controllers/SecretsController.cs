@@ -1,6 +1,9 @@
 using Core.Security;
+using DataAccess.Models.Api;
 using DataAccess.Models.Kms;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using VaultSharp.V1.Commons;
 
 namespace Services.Kms.Controllers;
 
@@ -11,7 +14,13 @@ namespace Services.Kms.Controllers;
 [Route("/api/v1.0/kms/[controller]/[action]")]
 public class SecretsController : ControllerBase
 {
-    private KmsVaultClient _client = new KmsVaultClient();
+    private readonly IKmsVaultClient _client;
+
+    public SecretsController(IKmsVaultClient client)
+    {
+        _client = client;
+    }
+
 
     /// <summary>
     /// CreateAsyncSecret
@@ -20,74 +29,118 @@ public class SecretsController : ControllerBase
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<bool> CreateAsyncSecret([FromBody] SecretModel secret1, CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateAsyncSecret([FromBody] SecretModel secret1,
+        CancellationToken cancellationToken)
     {
-        _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
-        _client.SetUserName(username: "admin");
-        _client.SetPassword(password: "admin");
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Error = ApiError.InvalidData
+            });
+        }
 
-        return await _client.CreatesecretAsync(secret1.Secret, secret1.SecretValue, path: "/kms");
+        return Created(string.Empty,
+            new ApiResponse<Secret<SecretData>>
+            {
+                Data = await _client.CreatesecretAsync(secret1.Secret, secret1.SecretValue, path: "/kms")
+            });
     }
 
     /// <summary>
     /// GetSecretAsync
     /// </summary>
-    /// <param name="secret"></param>
+    /// <param name="alias">Key alias</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
-    [Route("SecretModel/{secret.key}")]
-    public async Task<string> GetSecretAsync([FromBody] string secret, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias,
+        CancellationToken cancellationToken)
     {
-        _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
-        _client.SetUserName(username: "admin");
-        _client.SetPassword(password: "admin");
-        return await _client.GetSecretAsync(secret, path: "/kms");
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Error = ApiError.InvalidData
+            });
+        }
+
+        if (await _client.GetSecretAsync(alias, path: "/kms") is var secret && secret == null)
+        {
+            return NotFound(new ApiResponse<object>
+            {
+                Error = ApiError.SecretNotFound
+            });
+        }
+
+        return Ok(secret);
     }
 
     /// <summary>
     /// DeleteSecretAsync
     /// </summary>
-    /// <param name="model"></param>
+    /// <param name="alias">Key alias</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete]
-    [Route("kms/secretModel/{secret}")]
-    public async Task<bool> DeleteSecretAsync([FromBody] SecretModel model, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias,
+        CancellationToken cancellationToken)
     {
-        _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
-        _client.SetUserName(username: "admin");
-        _client.SetPassword(password: "admin");
-        try
+        if (!ModelState.IsValid)
         {
-            return await _client.DeleteSecretAsync(model.Secret, secretPath: "/kms");
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(e.Message);
+            return BadRequest("Invalid data");
         }
 
-        return false;
+        await _client.DeleteSecretAsync(alias, secretPath: "/kms");
+
+        return NoContent();
     }
 
     /// <summary>
     /// UpdateSecretASync
     /// </summary>
-    /// <param name="model"></param>
+    /// <param name="secretValue"></param>
     /// <param name="cancellationToken"></param>
+    /// <param name="keyalias"></param>
     /// <returns></returns>
-    [HttpPut]
-    public async Task<bool> UpdateSecretASync([FromBody] SecretModel model, CancellationToken cancellationToken)
+    [HttpPatch]
+    public async Task<IActionResult> UpdateSecretASync([FromQuery(Name = "keyAlias")] string keyalias,
+        [FromBody, BindRequired] Dictionary<string, object> secretValue,
+        CancellationToken cancellationToken)
     {
-        _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200");
-        _client.SetUserName(username: "admin");
-        _client.SetPassword(password: "admin");
-        var secretValue = new Dictionary<string, object> { { "feel", "good" } };
-        if (model.Secret!= null)
+        if (!ModelState.IsValid)
         {
-            return await _client.UpdateSecretAsync(model.Secret, secretValue, path: "/kms");
+            return BadRequest("Invalid data");
         }
 
-        return false;
+
+        return Ok(await _client.UpdateSecretAsync(keyalias, secretValue, path: "/kms"));
+    }
+
+    /// <summary>
+    /// DestroySecretAsync
+    /// </summary>
+    /// <param name="versionToDestroy"></param>
+    /// <param name="cancellationToken"></param>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    [HttpPatch]
+    public async Task<IActionResult> DestroySecretAsync(
+        [FromQuery] IList<int> versionToDestroy, [FromQuery] string key,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _client.DestroySecretAsync(path: "/kms", versionToDestroy, key));
+    }
+
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllSecretAsync([FromQuery(Name = "mountPoint"), BindRequired] string mountPoint)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
+        return Ok(await _client.GetAllAsync(mountPoint));
     }
 }

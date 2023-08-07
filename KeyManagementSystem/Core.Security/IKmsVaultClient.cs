@@ -1,4 +1,6 @@
+using Core.Security.Vault;
 using VaultSharp;
+using VaultSharp.V1.Commons;
 
 namespace Core.Security;
 
@@ -60,7 +62,7 @@ public interface IKmsVaultClient
     /// </summary>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public Task<string> GetSecretAsync(string key, string path);
+    public Task<Secret<SecretData>> GetSecretAsync(string key, string path);
 
 
     /// <summary>
@@ -69,7 +71,7 @@ public interface IKmsVaultClient
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="path"></param>
-    public Task<bool> CreatesecretAsync(string key, Dictionary<string, object> value, string path);
+    public Task<Secret<SecretData>> CreatesecretAsync(string key, Dictionary<string, object> value, string path);
 
     /// <summary>
     /// UpdateSecret
@@ -77,7 +79,7 @@ public interface IKmsVaultClient
     /// <param name="key"></param>
     /// <param name="secretValue"></param>
     /// <param name="path"></param>
-    public Task<bool> UpdateSecretAsync(string key, IDictionary<string, object> secretValue, string path);
+    public Task<Secret<SecretData>> UpdateSecretAsync(string key, IDictionary<string, object> secretValue, string path);
 
     /// <summary>
     /// DeleteSecret
@@ -98,5 +100,14 @@ public interface IKmsVaultClient
     /// <param name="model"></param>
     /// <param name="path"></param>
     /// <param name="secretValue"></param>
-    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path,Dictionary<string, object> secretValue);
+    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path, Dictionary<string, object> secretValue);
+
+    public Task<bool> DestroySecretAsync(string path, IList<int> versionTodelete, string key);
+
+    /// <summary>
+    /// Get All Secret From Vault 
+    /// </summary>
+    /// <param name="mountPoint"></param>
+    /// <returns></returns>
+    public Task<VaultDataModel> GetAllAsync(string mountPoint);
 }
