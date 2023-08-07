@@ -26,11 +26,9 @@ public class SecretsController : ControllerBase
     /// CreateAsyncSecret
     /// </summary>
     /// <param name="secret1"></param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<IActionResult> CreateAsyncSecret([FromBody] SecretModel secret1,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> CreateAsyncSecret([FromBody] SecretModel secret1)
     {
         if (!ModelState.IsValid)
         {
@@ -51,11 +49,9 @@ public class SecretsController : ControllerBase
     /// GetSecretAsync
     /// </summary>
     /// <param name="alias">Key alias</param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> GetSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias)
     {
         if (!ModelState.IsValid)
         {
@@ -80,11 +76,9 @@ public class SecretsController : ControllerBase
     /// DeleteSecretAsync
     /// </summary>
     /// <param name="alias">Key alias</param>
-    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [HttpDelete]
-    public async Task<IActionResult> DeleteSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias)
     {
         if (!ModelState.IsValid)
         {
@@ -100,13 +94,11 @@ public class SecretsController : ControllerBase
     /// UpdateSecretASync
     /// </summary>
     /// <param name="secretValue"></param>
-    /// <param name="cancellationToken"></param>
     /// <param name="keyalias"></param>
     /// <returns></returns>
     [HttpPatch]
     public async Task<IActionResult> UpdateSecretASync([FromQuery(Name = "keyAlias")] string keyalias,
-        [FromBody, BindRequired] Dictionary<string, object> secretValue,
-        CancellationToken cancellationToken)
+        [FromBody, BindRequired] Dictionary<string, object> secretValue)
     {
         if (!ModelState.IsValid)
         {
@@ -121,14 +113,17 @@ public class SecretsController : ControllerBase
     /// DestroySecretAsync
     /// </summary>
     /// <param name="versionToDestroy"></param>
-    /// <param name="cancellationToken"></param>
-    /// <param name="path"></param>
+    /// <param name="key"></param>
     /// <returns></returns>
     [HttpPatch]
     public async Task<IActionResult> DestroySecretAsync(
-        [FromQuery] IList<int> versionToDestroy, [FromQuery] string key,
-        CancellationToken cancellationToken)
+        [FromQuery] IList<int> versionToDestroy, [FromQuery(Name = "key"), BindRequired] string key)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
         return Ok(await _client.DestroySecretAsync(path: "/kms", versionToDestroy, key));
     }
 

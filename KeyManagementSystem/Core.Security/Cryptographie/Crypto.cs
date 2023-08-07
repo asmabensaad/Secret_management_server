@@ -5,8 +5,6 @@ using Jose;
 
 namespace Core.Security.Cryptographie;
 
-//TODO: Format code
-
 /// <inheritdoc cref="ICrypto"/>
 public class Crypto : ICrypto
 {
@@ -33,11 +31,10 @@ public class Crypto : ICrypto
     public byte[] Encrypt(byte[] data, Algorithm alg, byte[] keyBytes)
     {
         var key = Encoding.UTF8.GetString(keyBytes);
-        var i = (int)alg;
-        var cipherText = i switch
+        var cipherText = alg switch
         {
-            0 => JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS256_A128KW, JweEncryption.A128CBC_HS256),
-            1 => JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS384_A192KW, JweEncryption.A192CBC_HS384),
+            Algorithm.Hs256 => JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS256_A128KW, JweEncryption.A128CBC_HS256),
+            Algorithm.Hs384 => JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS384_A192KW, JweEncryption.A192CBC_HS384),
             _ => JWT.EncodeBytes(data, key, JweAlgorithm.PBES2_HS512_A256KW, JweEncryption.A256CBC_HS512)
         };
 
@@ -49,12 +46,13 @@ public class Crypto : ICrypto
     public byte[] Decrypt(byte[] cipherText, Algorithm alg, byte[] keyBytes)
     {
         var key = Encoding.UTF8.GetString(keyBytes);
-        var i = (int)alg;
-        var data = i switch
+        var data = alg switch
         {
-            0 => JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key, JweAlgorithm.PBES2_HS256_A128KW,
+            Algorithm.Hs256 => JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key,
+                JweAlgorithm.PBES2_HS256_A128KW,
                 JweEncryption.A128CBC_HS256),
-            1 => JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key, JweAlgorithm.PBES2_HS384_A192KW,
+            Algorithm.Hs384 => JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key,
+                JweAlgorithm.PBES2_HS384_A192KW,
                 JweEncryption.A192CBC_HS384),
             _ => JWT.DecodeBytes(Encoding.UTF8.GetString(cipherText), key, JweAlgorithm.PBES2_HS512_A256KW,
                 JweEncryption.A256CBC_HS512)

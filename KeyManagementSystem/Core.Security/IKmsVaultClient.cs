@@ -102,7 +102,8 @@ public interface IKmsVaultClient
     /// <param name="secretValue"></param>
     public Task<bool> RecurringJobsRotateKeyAsync(string model, string path, Dictionary<string, object> secretValue);
 
-    public Task<bool> DestroySecretAsync(string path, IList<int> versionTodelete, string key);
+    //TODO: Document the code.
+    public Task<bool> DestroySecretAsync(string path, IList<int> versionToDelete, string key);
 
     /// <summary>
     /// Get All Secret From Vault 

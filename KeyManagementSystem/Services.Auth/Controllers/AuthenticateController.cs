@@ -1,16 +1,12 @@
-using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security;
-using System.Security.Authentication;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using DataAccess.Database;
 using DataAccess.Models.AuthService;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.IdentityModel.Tokens;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
@@ -26,15 +22,16 @@ public class AuthenticateController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-    private readonly SignInManager<ApplicationUser> _signInManager;
 
-    public AuthenticateController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration, SignInManager<ApplicationUser> signInManager)
+    public AuthenticateController(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IConfiguration configuration
+    )
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        _signInManager = signInManager;
     }
 
     /// <summary>
@@ -82,7 +79,7 @@ public class AuthenticateController : ControllerBase
         if (userExist != null)
 
             return StatusCode(StatusCodes.Status500InternalServerError,
-                new Response { Status = "Error", Message = "User already exist!" });
+                new Response {Status = "Error", Message = "User already exist!"});
         ApplicationUser user = new()
         {
             Email = model.Email,
@@ -94,7 +91,7 @@ public class AuthenticateController : ControllerBase
         if (!result.Succeeded)
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new Response
-                    { Status = "Error", Message = "User creation failed! Please check user details and try again." });
+                    {Status = "Error", Message = "User creation failed! Please check user details and try again."});
         if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
             await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
         if (!await _roleManager.RoleExistsAsync(UserRoles.User))
@@ -109,7 +106,7 @@ public class AuthenticateController : ControllerBase
             await _userManager.AddToRoleAsync(user, UserRoles.User);
         }
 
-        return Ok(new Response { Status = "Success", Message = "User created successfully!" });
+        return Ok(new Response {Status = "Success", Message = "User created successfully!"});
     }
 
     /// <summary>
@@ -129,16 +126,16 @@ public class AuthenticateController : ControllerBase
     /// </summary>
     /// <param name="authClaims"></param>
     /// <returns></returns>
-    private JwtSecurityToken CreateToken(IEnumerable<Claim> authClaims)
+    private JwtSecurityToken CreateToken(IEnumerable<Claim> authClaims) // TODO: Use username and password
     {
-        var authSiginKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+        var authSigninKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
         _ = int.TryParse(_configuration["JWT:TokenValidityInMinutes"], out var tokenValidityInMinutes);
         var token = new JwtSecurityToken(
             issuer: _configuration["JWT:ValidIssuer"],
             audience: _configuration["JWT:ValidAudience"],
             expires: DateTime.Now.AddMinutes(tokenValidityInMinutes),
             claims: authClaims,
-            signingCredentials: new SigningCredentials(authSiginKey, SecurityAlgorithms.HmacSha256)
+            signingCredentials: new SigningCredentials(authSigninKey, SecurityAlgorithms.HmacSha256)
         );
         return token;
     }
@@ -146,220 +143,19 @@ public class AuthenticateController : ControllerBase
     /// <summary>
     /// Refresh Token 
     /// </summary>
-    /// <param name="tokenModel"></param>
+    /// <param name="refreshToken">Refresh token</param>
     /// <returns></returns>
     [HttpPost]
     [Route("refresh-token")]
-    public async Task<IActionResult> RefreshToken(TokenModel? tokenModel)
+    public IActionResult RefreshToken(
+        [FromHeader(Name = "refresh_token"), BindRequired]
+        string refreshToken)
     {
-        if (tokenModel is null)
+        if (!ModelState.IsValid)
         {
-            return BadRequest("Invalid client request");
+            return Unauthorized();
         }
 
-        var accessToken = tokenModel.AccessToken;
-        var refreshToken = tokenModel.RefreshToken;
-        var principal = GetPrincipalFromExpiredToken(accessToken);
-        if (principal == null)
-        {
-            return BadRequest("Invalid access token or refresh token");
-        }
-
-        var username = principal.Identity?.Name;
-
-        var user = await _userManager.FindByNameAsync(username);
-        if (user == null || user.RfereshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
-        {
-            return BadRequest("Invalid access token or refresh token");
-        }
-
-        var newAcessToken = CreateToken(principal.Claims.ToList());
-        var newRefreshToken = GenerateRefreshToken();
-        user.RfereshToken = newRefreshToken;
-        await _userManager.UpdateAsync(user);
-        return new ObjectResult(new
-        {
-            accessToken = new JwtSecurityTokenHandler().WriteToken(newAcessToken),
-            refreshToken = newRefreshToken
-        });
+        throw new NotImplementedException();
     }
-
-    /// <summary>
-    /// revoke a token from a specified user
-    /// </summary>
-    /// <param name="email"></param>
-    /// <param name="username"></param>
-    /// <returns></returns>
-    [Authorize]
-    [HttpPost]
-    [Route("revoke/{username}")]
-    public async Task<IActionResult> Revoke(string email, string username)
-    {
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null)
-            return BadRequest("Invalid user name");
-
-        user.RfereshToken = null;
-        await _userManager.UpdateAsync(user);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// revoke all token from all user
-    /// </summary>
-    /// <returns></returns>
-    [Authorize]
-    [HttpPost]
-    [Route("revoke-all")]
-    public async Task<IActionResult> RevokeAll()
-    {
-        var users = _userManager.Users.ToList();
-        foreach (var user in users)
-        {
-            user.RfereshToken = null;
-            await _userManager.UpdateAsync(user);
-        }
-
-        return NoContent();
-    }
-
-
-    private ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
-    {
-        var tokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateAudience = false,
-            ValidateIssuer = false,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
-            ValidateLifetime = false,
-        };
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
-        if (securityToken is not JwtSecurityToken jwtSecurityToken ||
-            !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256,
-                StringComparison.InvariantCultureIgnoreCase))
-            throw new SecurityException("invalid token!");
-        return principal;
-    }
-
-    /// <summary>
-    /// Get List Of All  Users
-    /// </summary>
-    /// <returns></returns>
-    [HttpGet]
-    [Route("GetAllUsers")]
-    public async Task<IActionResult> GetUsers()
-    {
-        var allUsers = await _userManager.Users.ToListAsync();
-        var userInformationList = allUsers.Select(u => new RegisterModel
-        {
-            Id=u.Id,
-            Username = u.UserName,
-            Email = u.Email,
-            ContactNumber = u.PhoneNumber
-        }).ToList();
-        return Ok(userInformationList);
-    }
-
-    /// <summary>
-    /// Get Current User
-    /// </summary>
-    /// <returns></returns>
-    [Authorize]
-    [HttpGet]
-    [Route("getCurrentUser")]
-    public async Task<IActionResult> GetUser()
-    {
-        if (User.Identity is not { IsAuthenticated: true }) return BadRequest("user not authenticated");
-        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user != null)
-        {
-            return Ok(new
-            {
-                userId = user.Id,
-                user.UserName,
-                user.Email
-            });
-        }
-        return BadRequest("user not authenticated");
-    }
-
-    [Authorize]
-    [HttpGet]
-    public int GetLoggedUserId()
-    {
-        if (User.Identity is { IsAuthenticated: false })
-            throw new AuthenticationException();
-
-        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-        Debug.Assert(userId != null, nameof(userId) + " != null");
-        return int.Parse(userId);
-    }
-
-    /// <summary>
-    /// Logout
-    /// </summary>
-    /// <returns></returns>
-    [Authorize]
-    [HttpPost]
-    [Route("logout")]
-    public async Task<IActionResult> Logout()
-    {
-        var user = await _userManager.GetUserAsync(User);
-        if (user != null)
-        {
-            user.RfereshToken = null;
-            await _userManager.UpdateAsync(user);
-        }
-
-        await _signInManager.SignOutAsync();
-        return Ok(new { message = "logout successful" });
-    }
-
-    //
-    // [Route("UpdateUser")]
-    // [HttpPost]
-    // public async Task<IActionResult> UpdateUser(RegisterModel model )
-    // {
-    //     ApplicationUser user = await _userManager.FindByEmailAsync(model.Email);
-    //     if (user != null)
-    //     {
-    //         if (!string.IsNullOrEmpty(model.Email))
-    //             user.Email = model.Email;
-    //         else 
-    //             ModelState.AddModelError("","email cannot be empty");
-    //         if (!string.IsNullOrEmpty(model.Username))
-    //             user.UserName = model.Username;
-    //    
-    //         
-    //         
-    //
-    //     }
-        // var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        // var user = await _userManager.FindByIdAsync(userId);
-        // if (user == null)
-        // {
-        //     return BadRequest("user not found");
-        // }
-        //
-        // user.Email = model.Email;
-        // user.UserName = model.Username;
-        // user.PhoneNumber = model.ContactNumber;
-        //
-        // var result = await _userManager.UpdateAsync(user);
-        // if (result.Succeeded)
-        // {
-        //     return Ok("user updated successfuly");
-        // }
-        // else
-        // {
-        //     var errors = result.Errors.Select(e => e.Description);
-        //     return BadRequest(new { errors });
-        // }
-    }
-    
-    
-    
+}

@@ -6,7 +6,7 @@ namespace UnitTests;
 [TestClass]
 public class KmsTest
 {
-    readonly KmsVaultClient  _kmsVaultClient = new();
+    readonly KmsVaultClient _kmsVaultClient = new();
 
     /// <summary>
     /// GetClient_returnClientVaultIfConected_ReturnNull
@@ -17,13 +17,14 @@ public class KmsTest
         try
         {
             //Action
-            IVaultClient client = _kmsVaultClient.SetPassword(password: "admin").SetUserName("admin").GetClient();
+            var client = _kmsVaultClient.SetPassword(password: "admin").SetUserName("admin").GetClient();
             //Assert
             Assert.IsInstanceOfType(client, typeof(IVaultClient));
         }
         // ReSharper disable once EmptyGeneralCatchClause
-        catch (Exception)
+        catch (Exception e)
         {
+            Assert.Fail(e.Message);
         }
     }
 
@@ -33,13 +34,12 @@ public class KmsTest
     [TestMethod]
     public async Task B_TestCreatesecretAsync()
     {
-        
         //Arrange
         const string path = "kms/";
         var secretValue = new Dictionary<string, object>
         {
-            { "username", "testuser" },
-            { "password", "testpassword" }
+            {"username", "testuser"},
+            {"password", "testpassword"}
         };
         //Action
         try
@@ -47,7 +47,7 @@ public class KmsTest
             _kmsVaultClient.SetPassword(password: "admin")
                 .SetUserName("admin")
                 .SetVaultAddress("http://127.0.0.1:8200");
-           
+
             //Assert 
             Assert.IsNotNull(await _kmsVaultClient.CreatesecretAsync("first",
                 secretValue, path));
@@ -88,7 +88,7 @@ public class KmsTest
     {
         const string key = "first";
         const string path = "/kms";
-        var secretvalue = new Dictionary<string, object> { { "feel", "good" } };
+        var secretvalue = new Dictionary<string, object> {{"feel", "good"}};
 
         try
         {
@@ -131,10 +131,8 @@ public class KmsTest
     public async Task F_RecuringJobTest()
     {
         const string path = "/kms";
-        var secretValue=new Dictionary<string, object>{{"new-secret","new-value"}};
+        var secretValue = new Dictionary<string, object> {{"new-secret", "new-value"}};
         _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path,secretValue));
+        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path, secretValue));
     }
-
-    
 }

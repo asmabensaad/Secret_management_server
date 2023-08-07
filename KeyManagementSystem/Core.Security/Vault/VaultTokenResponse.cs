@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 
 namespace Core.Security.Vault;
 
+//TODO: Document the code.
 public class VaultTokenResponse
 {
     [JsonProperty("request_id")]

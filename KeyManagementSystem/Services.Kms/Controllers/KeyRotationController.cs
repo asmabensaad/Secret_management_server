@@ -8,13 +8,11 @@ namespace Services.Kms.Controllers;
 [Route("/api/v1.0/kms/[controller]/[action]")]
 public class KeyRotationController : ControllerBase
 {
-    private readonly IConfiguration _configuration;
-    private readonly KmsVaultClient _client = new KmsVaultClient();
+    private readonly KmsVaultClient _client;
 
-    public KeyRotationController(IConfiguration configuration)
+    public KeyRotationController(KmsVaultClient client)
     {
-        _configuration = configuration;
-       
+        _client = client;
     }
 
 
@@ -25,9 +23,10 @@ public class KeyRotationController : ControllerBase
     /// <param name="secretValue"></param>
     /// <returns></returns>
     [HttpPut]
-    public IActionResult KeyRotateRecuringJob([FromQuery] string secret,[FromBody]Dictionary<string, object> secretValue)
+    public IActionResult KeyRotateRecuringJob([FromQuery] string secret,
+        [FromBody] Dictionary<string, object> secretValue)
     {
-        var jobId = BackgroundJob.Enqueue(() => ProcessKeyAsync(secret,secretValue));
+        var jobId = BackgroundJob.Enqueue(() => ProcessKeyAsync(secret, secretValue));
 
         return Accepted(jobId);
     }
@@ -39,14 +38,8 @@ public class KeyRotationController : ControllerBase
     /// <param name="secretValue"></param>
     /// <returns></returns>
     [HttpPut]
-    public Task<bool> ProcessKeyAsync(string secret,Dictionary<string, object> secretValue)
+    public Task<bool> ProcessKeyAsync(string secret, Dictionary<string, object> secretValue)
     {
-        //TODO: Remove hardcoded hosts and use IConfiguration with appsettings.json 
         return _client.RecurringJobsRotateKeyAsync(secret, "/kms", secretValue);
     }
-        // return _client.SetVaultAddress(vaultAddress: "http://127.0.0.1:8200")
-        //     .SetUserName(username: "admin")
-        //     .SetPassword(password: "admin")
-        //     .RecurringJobsRotateKeyAsync(secret, "/kms",secretValue);
-    
 }

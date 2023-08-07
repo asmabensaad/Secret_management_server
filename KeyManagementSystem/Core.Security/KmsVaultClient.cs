@@ -203,16 +203,16 @@ public class KmsVaultClient : IKmsVaultClient
     }
 
     /// <inheritdoc cref="IKmsVaultClient.DestroySecretAsync"/>
-    public async Task<bool> DestroySecretAsync(string path, IList<int> versionTodelete, string key)
+    public async Task<bool> DestroySecretAsync(string path, IList<int> versionToDelete, string key)
     {
         var client = GetClient();
         // IList<int> version = new List<int> {1};
         try
         {
             var destroyedVersions = new List<int>();
-            foreach (var version in versionTodelete)
+            foreach (var version in versionToDelete)
             {
-                await client.V1.Secrets.KeyValue.V2.DestroySecretVersionsAsync(path, versionTodelete, key);
+                await client.V1.Secrets.KeyValue.V2.DestroySecretVersionsAsync(path, versionToDelete, key);
                 destroyedVersions.Add(version);
             }
 
@@ -236,7 +236,6 @@ public class KmsVaultClient : IKmsVaultClient
 
             using var client = new HttpClient();
             client.DefaultRequestHeaders.TryAddWithoutValidation("X-Vault-Token", token);
-            var url = $"{VaultAddress}:{Port}/v1/{mountPoint}/metadata/";
             var result = await client.GetAsync($"{VaultAddress}:{Port}/v1/{mountPoint}/metadata/?list=true");
             Console.WriteLine(result.StatusCode);
 
