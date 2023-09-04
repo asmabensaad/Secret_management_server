@@ -87,7 +87,7 @@ public class SecretsController : ControllerBase
 
         await _client.DeleteSecretAsync(alias, secretPath: "/kms");
 
-        return NoContent();
+        return Ok("data removed successfully");
     }
 
     /// <summary>

@@ -56,15 +56,28 @@ public class KmsTokenHandler
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    public TokenValidationParameters GetValidationParameters()
+    public TokenValidationParameters GetValidationParameters(bool isRefresh)
     {
         var authSigninKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+        if (isRefresh)
+        {
+            return new TokenValidationParameters
+            {
+                ValidateLifetime = false,
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidIssuer = _configuration["JWT:ValidIssuer"],
+                IssuerSigningKey = authSigninKey
+            };
+        }
 
         return new TokenValidationParameters
         {
             ValidateLifetime = false,
-            ValidateAudience = false,
-            ValidateIssuer = false,
+            ValidateAudience = true,
+            ValidAudience = _configuration["JWT:ValidAudience"],
+            ValidateIssuer = true,
             ValidIssuer = _configuration["JWT:ValidIssuer"],
             IssuerSigningKey = authSigninKey
         };
@@ -73,9 +86,9 @@ public class KmsTokenHandler
     public bool IsValidateToken(string authToken)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var validationParameters = GetValidationParameters();
+        var validationParameters = GetValidationParameters(true);
 
-        var principal = tokenHandler.ValidateToken(authToken, validationParameters, out _);
+        _ = tokenHandler.ValidateToken(authToken, validationParameters, out _);
         return true;
     }
 }

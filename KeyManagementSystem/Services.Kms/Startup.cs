@@ -1,4 +1,5 @@
 using Core.Security;
+using Core.Security.Cryptographie;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Newtonsoft.Json;
@@ -61,6 +62,7 @@ public class Startup
                 options.SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
                 options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
             });
+        services.AddScoped<ICrypto, Crypto>();
        
 
 

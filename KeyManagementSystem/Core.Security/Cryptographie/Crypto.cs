@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 using Jose;
 
 
@@ -8,12 +9,13 @@ namespace Core.Security.Cryptographie;
 /// <inheritdoc cref="ICrypto"/>
 public class Crypto : ICrypto
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum Algorithm
     {
         //HMAC signatures with HS256, HS384 and HS512.
-        Hs256 = 0,
-        Hs384 = 1,
-        Hs512 = 2
+        Hs256,
+        Hs384,
+        Hs512
     }
 
     /// <inheritdoc cref="ICrypto.GenerateEncryptionKey"/>

@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Security.Authentication;
 using System.Security.Claims;
 using DataAccess.Database;
 using DataAccess.Models.AuthService;
@@ -7,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 
 namespace Services.Auth.Controllers;
@@ -46,20 +45,21 @@ public class UsersController : Controller
             Id = u.Id,
             Username = u.UserName,
             Email = u.Email,
-            ContactNumber = u.PhoneNumber
+            ContactNumber = u.PhoneNumber,
+           
         }).ToList();
         return Ok(userInformationList);
     }
 
     /// <summary>
-    /// Get Current User
+    /// Get the Current User
     /// </summary>
     /// <returns></returns>
     [HttpGet]
     [Route("getCurrentUser")]
     public async Task<IActionResult> GetUser()
     {
-        if (User.Identity is not {IsAuthenticated: true}) return BadRequest("user not authenticated");
+        if (User.Identity is not { IsAuthenticated: true }) return BadRequest("user not authenticated");
         var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         var user = await _userManager.FindByIdAsync(userId);
         if (user != null)
@@ -68,63 +68,79 @@ public class UsersController : Controller
             {
                 userId = user.Id,
                 user.UserName,
-                user.Email
+                user.Email,
+                user.PhoneNumber
+                
+                
             });
         }
 
         return BadRequest("user not authenticated");
     }
 
-    [HttpGet]
-    public int GetLoggedUserId()
+    /// <summary>
+    /// update user
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="username"></param>
+    /// <param name="email"></param>
+    /// <param name="contactNumber"></param>
+    /// <returns></returns>
+    [Route("UpdateUser/{id}")]
+    [HttpPost]
+    public async Task<IActionResult> UpdateUser(string id,string? username,string? email,string? contactNumber)
     {
-        if (User.Identity is {IsAuthenticated: false})
-            throw new AuthenticationException();
 
-        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-        Debug.Assert(userId != null, nameof(userId) + " != null");
-        return int.Parse(userId);
+       
+        var user = await _userManager.FindByIdAsync(id);
+        if (user == null)
+        {
+            return NotFound("User not Found");
+        }
+        
+
+        user.UserName = username;
+        user.Email = email;
+        user.PhoneNumber = contactNumber;
+        var updatedResult = await _userManager.UpdateAsync(user);
+        if (updatedResult.Succeeded)
+        {
+            return Ok("User updated successfully");
+        }
+
+        var errors = updatedResult.Errors.Select(error => error.Description);
+        return BadRequest(errors);
+
     }
+/// <summary>
+/// Delete User 
+/// </summary>
+/// <param name="userId"></param>
+/// <returns></returns>
 
-    //
-    // [Route("UpdateUser")]
-    // [HttpPost]
-    // public async Task<IActionResult> UpdateUser(RegisterModel model )
-    // {
-    //     ApplicationUser user = await _userManager.FindByEmailAsync(model.Email);
-    //     if (user != null)
-    //     {
-    //         if (!string.IsNullOrEmpty(model.Email))
-    //             user.Email = model.Email;
-    //         else 
-    //             ModelState.AddModelError("","email cannot be empty");
-    //         if (!string.IsNullOrEmpty(model.Username))
-    //             user.UserName = model.Username;
-    //    
-    //         
-    //         
-    //
-    //     }
-    // var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-    // var user = await _userManager.FindByIdAsync(userId);
-    // if (user == null)
-    // {
-    //     return BadRequest("user not found");
-    // }
-    //
-    // user.Email = model.Email;
-    // user.UserName = model.Username;
-    // user.PhoneNumber = model.ContactNumber;
-    //
-    // var result = await _userManager.UpdateAsync(user);
-    // if (result.Succeeded)
-    // {
-    //     return Ok("user updated successfuly");
-    // }
-    // else
-    // {
-    //     var errors = result.Errors.Select(e => e.Description);
-    //     return BadRequest(new { errors });
-    // }
+    [Route("DeleteUser")]
+    [HttpDelete]
+    public async Task<IActionResult> DeleteUser([FromQuery (Name = "userId"), BindRequired]string? userId)
+    {
+        if (userId == null )
+        {
+            return BadRequest("Invalid data format");
+        }
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+        {
+            return NotFound("user not found");
+        }
+
+        var result = await _userManager.DeleteAsync(user);
+        if (result.Succeeded)
+        {
+            await _signInManager.SignOutAsync();
+            return Ok("user deleted successfully");
+        }
+
+        var errors = result.Errors.Select(error => error.Description);
+        return BadRequest(errors);
+    }
 }

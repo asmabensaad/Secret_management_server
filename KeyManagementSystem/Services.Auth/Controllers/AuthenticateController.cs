@@ -1,12 +1,15 @@
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Core.Security.Authentication;
 using DataAccess.Database;
 using DataAccess.Models.Api;
 using DataAccess.Models.AuthService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Services.Auth.Repository;
 
 namespace Services.Auth.Controllers;
 
@@ -16,19 +19,21 @@ namespace Services.Auth.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 public class AuthenticateController : ControllerBase
-{
+{   private readonly IEmailSender _emailSender;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly KmsTokenHandler _tokenHandler;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
     public AuthenticateController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        IConfiguration configuration
-    )
+        IConfiguration configuration, IEmailSender emailSender,SignInManager<ApplicationUser> signInManager)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _emailSender = emailSender;
+        _signInManager = signInManager;
         _tokenHandler = new KmsTokenHandler(configuration);
     }
 
@@ -153,4 +158,62 @@ public class AuthenticateController : ControllerBase
             }
         });
     }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([Required] string email)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("Invalid request");
+        }
+
+        var user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+        {
+            return BadRequest("Invalid request");
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var callback = Url.Action("ResetPassword", "Authenticate", new { token, email = user.Email }, Request.Scheme);
+     
+        var message = new Message(new string[] { user.Email }, "Reset password token", callback);
+        await _emailSender.SendEmailAsync(message);
+        
+        return Ok("Password reset link sent successfully.");
+    }
+    
+    
+    [HttpPost]
+    [AllowAnonymous]
+    [Route("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest("Invalid request");
+        }
+
+        var user = await _userManager.FindByIdAsync(model.Email);
+        if (user == null)
+        {
+            // User not found
+            return BadRequest("Invalid request");
+        }
+
+        var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
+        if (result.Succeeded)
+        {
+            // Password successfully reset
+            return Ok("Password reset successful.");
+        }
+        else
+        {
+            // Password reset failed
+            return BadRequest("Password reset failed. Please try again.");
+        }
+    }
+
+   
 }
