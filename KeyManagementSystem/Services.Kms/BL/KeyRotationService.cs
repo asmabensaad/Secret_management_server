@@ -1,11 +1,22 @@
+using Core.Security;
+using Hangfire;
+
 namespace Services.Kms.BL;
 
 /// <inheritdoc cref="IKeyRotationService"/>
-public class KeyRotationService: IKeyRotationService
+public class KeyRotationService : IKeyRotationService
 {
-    /// <inheritdoc cref="IKeyRotationService.RotateAsync"/>
-    public Task RotateAsync(string keyAlias)
+    private readonly IKmsVaultClient _client;
+
+    public KeyRotationService(IKmsVaultClient client)
     {
-        throw new NotImplementedException();
+        _client = client;
+    }
+
+    /// <inheritdoc cref="IKeyRotationService.RotateAsync"/>
+    public Task RotateAsync(string keyAlias, string path)
+    {
+        BackgroundJob.Enqueue(() => _client.RotateAsync(keyAlias, path));
+        return Task.CompletedTask;
     }
 }

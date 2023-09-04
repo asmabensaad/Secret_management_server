@@ -3,6 +3,7 @@ using DataAccess.Models.Api;
 using DataAccess.Models.Kms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Services.Kms.BL;
 using VaultSharp.V1.Commons;
 
 namespace Services.Kms.Controllers;
@@ -48,10 +49,13 @@ public class SecretsController : ControllerBase
     /// <summary>
     /// GetSecretAsync
     /// </summary>
+    /// <param name="rotationService"></param>
     /// <param name="alias">Key alias</param>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> GetSecretAsync([FromQuery(Name = "alias"), BindRequired] string alias)
+    public async Task<IActionResult> GetSecretAsync([FromServices] IKeyRotationService rotationService,
+        [FromQuery(Name = "alias"), BindRequired]
+        string alias)
     {
         if (!ModelState.IsValid)
         {
@@ -67,6 +71,11 @@ public class SecretsController : ControllerBase
             {
                 Error = ApiError.SecretNotFound
             });
+        }
+
+        if (Math.Abs((DateTime.UtcNow - DateTime.Parse(secret.Data.Metadata?.CreatedTime!)).TotalDays) > 90)
+        {
+            await rotationService.RotateAsync(alias, "/kms");
         }
 
         return Ok(secret);

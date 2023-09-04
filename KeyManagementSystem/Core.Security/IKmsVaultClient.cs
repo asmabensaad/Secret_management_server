@@ -95,12 +95,12 @@ public interface IKmsVaultClient
     public IVaultClient GetClient();
 
     /// <summary>
-    /// RecurringJobsRotateKey
+    /// Rotate key
     /// </summary>
-    /// <param name="model"></param>
-    /// <param name="path"></param>
-    /// <param name="secretValue"></param>
-    public Task<bool> RecurringJobsRotateKeyAsync(string model, string path, Dictionary<string, object> secretValue);
+    /// <param name="alias">Key alias name</param>
+    /// <param name="path">Key path</param>
+    /// <returns></returns>
+    public Task RotateAsync(string alias, string path);
 
     //TODO: Document the code.
     public Task<bool> DestroySecretAsync(string path, IList<int> versionToDelete, string key);
