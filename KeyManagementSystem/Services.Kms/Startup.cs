@@ -4,6 +4,7 @@ using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Services.Kms.BL;
 using StackExchange.Redis;
 
 namespace Services.Kms;
@@ -23,7 +24,7 @@ public class Startup
     {
         KeepAlive = 0,
         AllowAdmin = true,
-        EndPoints = { { "127.0.0.1", 6379 } },
+        EndPoints = {{"127.0.0.1", 6379}},
         ConnectTimeout = 5000,
         ConnectRetry = 3,
         SyncTimeout = 5000,
@@ -37,7 +38,7 @@ public class Startup
 
         var vaultConfig = _configuration.GetSection("VaultConfig").Get<KmsVaultClient>();
 
-        services.AddScoped<IKmsVaultClient, KmsVaultClient>(
+        services.AddTransient<IKmsVaultClient, KmsVaultClient>(
             _ => new KmsVaultClient
             {
                 VaultAddress = vaultConfig.VaultAddress,
@@ -64,6 +65,8 @@ public class Startup
             });
         services.AddScoped<ICrypto, Crypto>();
        
+
+        services.AddScoped<IKeyRotationService, KeyRotationService>();
 
 
         services.AddCors(options => options.AddPolicy(name: CorsPolicy,

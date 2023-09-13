@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Core.Security.Vault;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
@@ -101,6 +102,15 @@ public class KmsVaultClient : IKmsVaultClient
         return vaultClient;
     }
 
+    /// <inheritdoc cref="IKmsVaultClient.RotateAsync"/>
+    public async Task RotateAsync(string alias, string path)
+    {
+        var newKey = Convert.ToBase64String(GetRandomBytes(32));
+
+        await GetClient().V1.Secrets.KeyValue.V2.WriteSecretAsync(alias,
+            new Dictionary<string, object> {{"secretValue", newKey}}, mountPoint: path);
+    }
+
 
     /// <inheritdoc cref="IKmsVaultClient.GetSecretAsync"/>
     public async Task<Secret<SecretData>> GetSecretAsync(string key, string path)
@@ -165,41 +175,6 @@ public class KmsVaultClient : IKmsVaultClient
         {
             throw new CoreSecurityException("path  kms/ not found in vault");
         }
-    }
-
-    /// <inheritdoc cref="IKmsVaultClient.RecurringJobsRotateKeyAsync"/>
-    public async Task<bool> RecurringJobsRotateKeyAsync(string key, string path, Dictionary<string, object> secretValue)
-    {
-        var localDate = DateTime.Now;
-        var client = GetClient();
-
-        try
-        {
-            var secretmetadata =
-                await client.V1.Secrets.KeyValue.V2.ReadSecretMetadataAsync(key, path);
-
-            var dataCreatedTime = secretmetadata.Data.CreatedTime;
-
-            if (DateTime.TryParse(dataCreatedTime, out var date))
-            {
-                var ts = localDate - date;
-
-                if (ts.Days <= 2)
-                {
-                    return true;
-                }
-
-                await client.V1.Secrets.KeyValue.V2.DeleteSecretAsync(key, path);
-                await client.V1.Secrets.KeyValue.V2.WriteSecretAsync(key, secretValue, null, path);
-                return true;
-            }
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-
-        return false;
     }
 
     /// <inheritdoc cref="IKmsVaultClient.DestroySecretAsync"/>
@@ -280,5 +255,18 @@ public class KmsVaultClient : IKmsVaultClient
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Generate PRN bytes
+    /// </summary>
+    /// <param name="length"></param>
+    /// <returns></returns>
+    public static byte[] GetRandomBytes(int length)
+    {
+        var secret = new byte[length];
+        var random = RandomNumberGenerator.Create();
+        random.GetBytes(secret);
+        return secret;
     }
 }

@@ -38,8 +38,8 @@ public class KmsTest
         const string path = "kms/";
         var secretValue = new Dictionary<string, object>
         {
-            {"username", "testuser"},
-            {"password", "testpassword"}
+            { "username", "testuser" },
+            { "password", "testpassword" }
         };
         //Action
         try
@@ -88,7 +88,7 @@ public class KmsTest
     {
         const string key = "first";
         const string path = "/kms";
-        var secretvalue = new Dictionary<string, object> {{"feel", "good"}};
+        var secretvalue = new Dictionary<string, object> { { "feel", "good" } };
 
         try
         {
@@ -123,16 +123,17 @@ public class KmsTest
             Assert.Fail(e.Message);
         }
     }
-
-    /// <summary>
-    /// F_RecuringJobTest
-    /// </summary>
-    [TestMethod]
-    public async Task F_RecuringJobTest()
-    {
-        const string path = "/kms";
-        var secretValue = new Dictionary<string, object> {{"new-secret", "new-value"}};
-        _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
-        Assert.IsTrue(await _kmsVaultClient.RecurringJobsRotateKeyAsync(key: "first", path, secretValue));
-    }
 }
+
+//     /// <summary>
+//     /// F_RecuringJobTest
+//     /// </summary>
+//     [TestMethod]
+//     public async Task F_RecuringJobTest()
+//     {
+//         const string path = "/kms";
+//         var secretValue = new Dictionary<string, object> {{"new-secret", "new-value"}};
+//         _kmsVaultClient.SetUserName("admin").SetPassword("admin").SetVaultAddress("http://127.0.0.1:8200");
+//         Assert.IsTrue(await _kmsVaultClient.RotateAsync(alias: "first", path:"/kms"));
+//     }
+// }
